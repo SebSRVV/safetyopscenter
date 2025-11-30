@@ -1,103 +1,53 @@
 import { supabase } from "@/lib/supabase/client";
 
-export interface Unidad {
-  id: string;
-  codigo: string;
-  tipo: "camion" | "excavadora" | "cargador" | "perforadora" | "vehiculo_liviano" | "otro";
-  marca: string;
-  modelo: string;
-  anio: number;
-  mina_id: string;
-  mina_nombre?: string;
-  estado: "activo" | "inactivo" | "mantenimiento" | "fuera_servicio";
-  dispositivo_id?: string;
-  ultima_ubicacion?: {
-    latitud: number;
-    longitud: number;
-    timestamp: string;
-  };
-  created_at: string;
-  updated_at: string;
+export type ClaseFlota = "vehiculo_liviano" | "vehiculo_pesado" | "maquinaria";
+export type FamiliaFlota = "camioneta" | "camion" | "bus" | "scooptram" | "dumper" | "jumbo" | "otro";
+
+export interface Flota {
+  id_flota: number;
+  nombre: string;
+  clase: ClaseFlota;
+  familia: FamiliaFlota;
+  tipo_especifico?: string;
+  placa_o_credencial?: string;
+  marca?: string;
+  modelo?: string;
+  anio_fabricacion?: number;
+  capacidad_toneladas?: number;
+  creado_por?: number;
+  creado_en?: string;
 }
 
-export interface Telemetria {
-  id: string;
-  unidad_id: string;
-  velocidad: number;
-  latitud: number;
-  longitud: number;
-  rumbo: number;
-  motor_encendido: boolean;
-  nivel_combustible?: number;
-  timestamp: string;
-}
-
-export async function listarFlota(minaId?: string) {
-  const params = minaId ? { p_mina_id: minaId } : {};
-  const { data, error } = await supabase.rpc("rpc_listar_flota", params);
+export async function listarFlota(idMina: number): Promise<Flota[]> {
+  const { data, error } = await supabase.rpc("rpc_listar_flota", { p_id_mina: idMina });
   if (error) throw error;
-  return data as Unidad[];
+  return (data || []) as Flota[];
 }
 
-export async function obtenerUnidad(id: string) {
-  const { data, error } = await supabase.rpc("rpc_obtener_unidad", { p_id: id });
-  if (error) throw error;
-  return data as Unidad;
-}
-
-export async function crearUnidad(unidad: Omit<Unidad, "id" | "created_at" | "updated_at" | "mina_nombre" | "ultima_ubicacion">) {
-  const { data, error } = await supabase.rpc("rpc_crear_unidad", {
-    p_codigo: unidad.codigo,
-    p_tipo: unidad.tipo,
-    p_marca: unidad.marca,
-    p_modelo: unidad.modelo,
-    p_anio: unidad.anio,
-    p_mina_id: unidad.mina_id,
-    p_estado: unidad.estado,
+export async function crearFlota(flota: {
+  nombre: string;
+  clase: ClaseFlota;
+  familia: FamiliaFlota;
+  tipo_especifico?: string;
+  placa?: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  capacidad?: number;
+  id_mina: number;
+}): Promise<Flota> {
+  const { data, error } = await supabase.rpc("rpc_crear_flota", {
+    p_nombre: flota.nombre,
+    p_clase: flota.clase,
+    p_familia: flota.familia,
+    p_tipo_especifico: flota.tipo_especifico || null,
+    p_placa: flota.placa || null,
+    p_marca: flota.marca || null,
+    p_modelo: flota.modelo || null,
+    p_anio: flota.anio || null,
+    p_capacidad: flota.capacidad || null,
+    p_id_mina: flota.id_mina,
   });
   if (error) throw error;
-  return data;
-}
-
-export async function actualizarUnidad(id: string, unidad: Partial<Unidad>) {
-  const { data, error } = await supabase.rpc("rpc_actualizar_unidad", {
-    p_id: id,
-    ...unidad,
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function eliminarUnidad(id: string) {
-  const { data, error } = await supabase.rpc("rpc_eliminar_unidad", { p_id: id });
-  if (error) throw error;
-  return data;
-}
-
-export async function asignarDispositivoUnidad(unidadId: string, dispositivoId: string) {
-  const { data, error } = await supabase.rpc("rpc_asignar_dispositivo_unidad", {
-    p_unidad_id: unidadId,
-    p_dispositivo_id: dispositivoId,
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function obtenerTelemetriaUnidad(unidadId: string, limite: number = 100) {
-  const { data, error } = await supabase.rpc("rpc_obtener_telemetria_unidad", {
-    p_unidad_id: unidadId,
-    p_limite: limite,
-  });
-  if (error) throw error;
-  return data as Telemetria[];
-}
-
-export async function obtenerRutaUnidad(unidadId: string, fechaInicio: string, fechaFin: string) {
-  const { data, error } = await supabase.rpc("rpc_obtener_ruta_unidad", {
-    p_unidad_id: unidadId,
-    p_fecha_inicio: fechaInicio,
-    p_fecha_fin: fechaFin,
-  });
-  if (error) throw error;
-  return data as Telemetria[];
+  return data as Flota;
 }
