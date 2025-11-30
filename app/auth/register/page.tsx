@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, UserPlus, Shield, Loader2 } from "lucide-react";
+import { Eye, EyeOff, UserPlus, Shield, Loader2, ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +27,12 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   const {
     register,
@@ -54,6 +54,7 @@ export default function RegisterPage() {
           data: {
             nombre: data.nombre,
           },
+          emailRedirectTo: `${window.location.origin}/auth/login`,
         },
       });
 
@@ -79,14 +80,55 @@ export default function RegisterPage() {
         }
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      setUserEmail(data.email);
+      setSuccess(true);
     } catch {
       setError("Ocurrio un error inesperado. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <Card className="bg-card border-border/50 shadow-2xl">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
+                <CheckCircle className="h-8 w-8 text-emerald-500" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Cuenta Creada</CardTitle>
+            <CardDescription>Tu cuenta ha sido creada exitosamente</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="bg-emerald-500/10 border-emerald-500/30">
+              <Mail className="h-4 w-4 text-emerald-500" />
+              <AlertDescription className="text-emerald-400">
+                Hemos enviado un correo de verificacion a <strong>{userEmail}</strong>
+              </AlertDescription>
+            </Alert>
+            <div className="text-sm text-muted-foreground text-center space-y-2">
+              <p>Por favor revisa tu bandeja de entrada y haz clic en el enlace de verificacion para activar tu cuenta.</p>
+              <p className="text-xs">Si no recibes el correo, revisa tu carpeta de spam.</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Link href="/auth/login" className="w-full">
+              <Button className="w-full">Ir a Iniciar Sesion</Button>
+            </Link>
+            <Link href="/" className="w-full">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al inicio
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -95,6 +137,15 @@ export default function RegisterPage() {
       transition={{ duration: 0.5 }}
       className="w-full max-w-md"
     >
+      <div className="mb-4">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al inicio
+          </Button>
+        </Link>
+      </div>
+
       <Card className="bg-card border-border/50 shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
@@ -141,7 +192,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="operador@mina.cl"
+                placeholder="usuario@poderosa.com.pe"
                 {...register("email")}
                 className={`bg-background border-border/50 focus:border-primary/50 ${
                   errors.email ? "border-destructive" : ""

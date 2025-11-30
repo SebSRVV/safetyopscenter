@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, LogIn, Shield, Loader2 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Shield, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +26,19 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const logoutSuccess = searchParams.get("logout") === "success";
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showLogoutMessage, setShowLogoutMessage] = useState(logoutSuccess);
+
+  useEffect(() => {
+    if (logoutSuccess) {
+      const timer = setTimeout(() => setShowLogoutMessage(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [logoutSuccess]);
 
   const {
     register,
@@ -74,6 +83,24 @@ function LoginFormContent() {
       transition={{ duration: 0.5 }}
       className="w-full max-w-md"
     >
+      <div className="mb-4">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al inicio
+          </Button>
+        </Link>
+      </div>
+
+      {showLogoutMessage && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+          <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>Sesion cerrada correctamente. Hasta pronto!</AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
+
       <Card className="bg-card border-border/50 shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
@@ -83,7 +110,7 @@ function LoginFormContent() {
           </div>
           <CardTitle className="text-2xl font-bold">SafetyOps Center</CardTitle>
           <CardDescription>
-            Mina Poderosa - Ingresa tus credenciales
+            Mina Poderosa - La Libertad, Peru
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -164,12 +191,12 @@ function LoginFormContent() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
+          <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            Olvidaste tu contrasena?
+          </Link>
           <div className="text-sm text-muted-foreground text-center">
             No tienes una cuenta?{" "}
-            <Link
-              href="/auth/register"
-              className="text-primary hover:underline font-medium"
-            >
+            <Link href="/auth/register" className="text-primary hover:underline font-medium">
               Registrate aqui
             </Link>
           </div>

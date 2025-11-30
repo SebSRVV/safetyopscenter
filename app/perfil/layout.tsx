@@ -1,0 +1,10 @@
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { QueryProvider } from "@/components/providers/query-provider";
+
+export default function PerfilLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </QueryProvider>
+  );
+}
