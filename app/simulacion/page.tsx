@@ -17,9 +17,9 @@ type ScenarioType = "single-success" | "single-accident" | "dual-success" | "dua
 type ZonaType = "nivel-2000" | "rampa-principal" | "nivel-1800" | "cruce-pataz";
 
 const zonas = [
-  { id: "nivel-2000", nombre: "Nivel 2000 - Santa Maria", descripcion: "Zona interna de la mina" },
-  { id: "rampa-principal", nombre: "Rampa Principal", descripcion: "Zona externa - Acceso vehicular" },
-  { id: "nivel-1800", nombre: "Nivel 1800 - Pataz", descripcion: "Zona de humedad y neblina" },
+  { id: "nivel-2000", nombre: "Zona interna de la mina", descripcion: "Zona interna de la mina" },
+  { id: "rampa-principal", nombre: "Zona externa - Acceso vehicular", descripcion: "Zona externa - Acceso vehicular" },
+  { id: "nivel-1800", nombre: "Zona de humedad y neblina", descripcion: "Zona de humedad y neblina" },
   { id: "cruce-pataz", nombre: "Cruce Nivel Pataz", descripcion: "Zona de extraccion" },
 ];
 
@@ -349,7 +349,7 @@ export default function SimulacionPage() {
                   {/* Piso de galeria */}
                   <div className="absolute left-24 right-24 bottom-0 h-32 bg-gradient-to-t from-stone-800 via-stone-700/50 to-transparent">
                     <div className="absolute top-4 left-4 right-4 text-center">
-                      <span className="text-amber-500/50 text-xs font-bold tracking-widest">ZONA INTERNA - SANTA MARIA - NIVEL 2000</span>
+                      <span className="text-amber-500/50 text-xs font-bold tracking-widest">Zona interna de la mina</span>
                     </div>
                   </div>
                 </>
@@ -466,7 +466,7 @@ export default function SimulacionPage() {
                   {/* Piso con charcos */}
                   <div className="absolute left-28 right-28 bottom-0 h-28 bg-gradient-to-t from-slate-900 to-transparent">
                     <div className="absolute top-6 left-4 right-4 text-center">
-                      <span className="text-cyan-400/50 text-xs font-bold tracking-widest">ZONA HUMEDAD/NEBLINA - PATAZ - NIVEL 1800</span>
+                      <span className="text-cyan-400/50 text-xs font-bold tracking-widest">ZONA CON HUMEDAD/NEBLINA</span>
                     </div>
                     {[...Array(6)].map((_, i) => (
                       <motion.div key={i} className="absolute bg-cyan-900/30 rounded-full"
@@ -536,7 +536,7 @@ export default function SimulacionPage() {
                   {/* Señalizacion del cruce */}
                   <div className="absolute left-20 right-20 bottom-0 h-24 bg-gradient-to-t from-stone-800 to-transparent">
                     <div className="absolute top-4 left-4 right-4 text-center">
-                      <span className="text-yellow-400/60 text-xs font-bold tracking-widest">ZONA DE EXTRACCION - CRUCE PATAZ - SEMAFORO ACTIVO</span>
+                      <span className="text-yellow-400/60 text-xs font-bold tracking-widest">ZONA DE EXTRACCION DE MINERALES</span>
                     </div>
                     {/* Flechas direccionales */}
                     <div className="absolute bottom-4 left-[25%] text-emerald-400/50 text-2xl">→</div>

@@ -112,31 +112,35 @@ export function Sidebar() {
         <div className="flex h-16 items-center justify-between px-4 border-b border-border/50">
           <AnimatePresence mode="wait">
             {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-foreground">
-                    SafetyOps
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Mina Poderosa
-                  </span>
-                </div>
-              </motion.div>
+              <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                    <Shield className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-lg font-bold text-foreground">
+                      SafetyOps
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Centro de Control
+                    </span>
+                  </div>
+                </motion.div>
+              </Link>
             )}
           </AnimatePresence>
           {collapsed && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 mx-auto">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
+            <Link href="/" className="mx-auto hover:opacity-80 transition-opacity">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+            </Link>
           )}
         </div>
 

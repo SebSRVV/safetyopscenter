@@ -10,6 +10,7 @@ import {
   Activity,
   Bell,
   Cpu,
+  Mountain,
 } from "lucide-react";
 import { StatCard } from "@/components/cards/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
@@ -18,6 +19,7 @@ import { MiningMap } from "@/components/maps/mining-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardSkeleton, ListItemSkeleton, ActivitySkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { useMinas, useDashboardResumen, useAlarmas, useFlota } from "@/hooks/use-dashboard";
 
@@ -54,7 +56,7 @@ export default function DashboardPage() {
   const { data: alarmas, isLoading: loadingAlarmas } = useAlarmas(activeMinaId);
   const { data: flota, isLoading: loadingFlota } = useFlota(activeMinaId);
 
-  const minaActual = minas?.find(m => m.id_mina === selectedMina);
+  const minaActual = minas?.find(m => m.id_mina === activeMinaId);
   const isLoading = loadingMinas || loadingResumen;
 
   const mapMarkers = flota?.slice(0, 5).map((f, i) => ({
@@ -74,11 +76,34 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard - SafetyOps Center</h1>
-        <p className="text-muted-foreground mt-1">
-          {minaActual?.nombre || "Mina Poderosa"} - {minaActual?.ubicacion || "La Libertad, Peru"} | Centro de Control
-        </p>
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3 }}
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard - SafetyOps Center</h1>
+          <p className="text-muted-foreground mt-1">
+            {minaActual?.nombre || "Selecciona una mina"} - {minaActual?.ubicacion || ""} | Centro de Control
+          </p>
+        </div>
+        <Select
+          value={activeMinaId?.toString() || ""}
+          onValueChange={(value) => setSelectedMina(Number(value))}
+        >
+          <SelectTrigger className="w-full md:w-[280px] bg-card border-border/50">
+            <Mountain className="h-4 w-4 mr-2 text-primary" />
+            <SelectValue placeholder="Seleccionar mina" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            {minas?.map((mina) => (
+              <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                {mina.nombre} - {mina.ubicacion}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

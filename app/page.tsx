@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Shield, ArrowRight, Truck, AlertTriangle, BarChart3, MapPin, Play, Zap, Users, Radio } from "lucide-react";
+import { Shield, ArrowRight, Truck, AlertTriangle, BarChart3, MapPin, Users, Radio, Github, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
+  transition: { duration: 0.4, ease: "easeOut" }
 };
 
 const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.1 } }
+  initial: {},
+  animate: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } }
 };
 
 const features = [
@@ -95,12 +96,6 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/simulacion">
-              <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
-                <Play className="h-4 w-4 mr-2" />
-                Ver Demo
-              </Button>
-            </Link>
             <Link href="/auth/login">
               <Button variant="ghost">Iniciar Sesion</Button>
             </Link>
@@ -138,7 +133,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6"
+            className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10"
           >
             Plataforma integral para el monitoreo, control y prevencion de incidentes 
             en operaciones mineras subterraneas y a cielo abierto.
@@ -148,16 +143,6 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center justify-center gap-2 text-muted-foreground mb-10"
-          >
-            <Zap className="h-5 w-5 text-primary" />
-            <span>Tecnologia IoT + Inteligencia Artificial + Tiempo Real</span>
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
             className="flex justify-center gap-4"
           >
             <Link href="/auth/register">
@@ -233,20 +218,40 @@ export default function HomePage() {
                   Crear Cuenta Gratis
                 </Button>
               </Link>
-              <Link href="/simulacion">
-                <Button size="lg" variant="outline">
-                  <Play className="h-4 w-4 mr-2" />
-                  Ver Demostracion
-                </Button>
-              </Link>
             </div>
           </motion.div>
         </section>
       </main>
 
       <footer className="border-t border-border/50 py-8">
-        <div className="container mx-auto px-6 text-center text-muted-foreground">
-          <p>2024 SafetyOps Center - Sistema de Prevencion y Seguridad Minera</p>
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-muted-foreground text-sm">
+              © 2025 SafetyOps Center - Sistema de Prevencion y Seguridad Minera
+            </p>
+            <div className="flex items-center gap-3">
+              <a 
+                href="https://github.com/SebSRVV/saftyopscenter" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                  <Github className="h-4 w-4 mr-2" />
+                  Repositorio
+                </Button>
+              </a>
+              <a 
+                href="https://github.com/SebSRVV/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                  <User className="h-4 w-4 mr-2" />
+                  Creador
+                </Button>
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
