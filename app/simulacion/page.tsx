@@ -20,7 +20,7 @@ const zonas = [
   { id: "nivel-2000", nombre: "Zona interna de la mina", descripcion: "Zona interna de la mina" },
   { id: "rampa-principal", nombre: "Zona externa - Acceso vehicular", descripcion: "Zona externa - Acceso vehicular" },
   { id: "nivel-1800", nombre: "Zona de humedad y neblina", descripcion: "Zona de humedad y neblina" },
-  { id: "cruce-pataz", nombre: "Cruce Nivel Pataz", descripcion: "Zona de extraccion" },
+  { id: "cruce-pataz", nombre: "Zona de transporte de materiales", descripcion: "Zona de extraccion" },
 ];
 
 interface VehicleState {
