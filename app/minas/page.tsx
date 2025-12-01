@@ -37,12 +37,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useMinas, useCrearMina } from "@/hooks/use-dashboard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useMinas, useCrearMina, useActualizarMina, useEliminarMina } from "@/hooks/use-dashboard";
 import { useToast } from "@/hooks/use-toast";
+import { Mina } from "@/lib/rpc/minas";
 
 export default function MinasPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedMina, setSelectedMina] = useState<Mina | null>(null);
   const [formData, setFormData] = useState({
     nombre: "",
     codigo: "",
@@ -53,6 +67,8 @@ export default function MinasPage() {
   const { toast } = useToast();
   const { data: minas, isLoading, error, refetch, isFetching } = useMinas();
   const crearMinaMutation = useCrearMina();
+  const actualizarMinaMutation = useActualizarMina();
+  const eliminarMinaMutation = useEliminarMina();
 
   const filteredMinas = (minas || []).filter(
     (mina) =>
@@ -93,6 +109,59 @@ export default function MinasPage() {
       title: "Actualizando",
       description: "Cargando datos desde Supabase...",
     });
+  };
+
+  const handleEditMina = (mina: Mina) => {
+    setSelectedMina(mina);
+    setFormData({
+      nombre: mina.nombre,
+      codigo: mina.codigo,
+      ubicacion: mina.ubicacion,
+      empresa: mina.empresa,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateMina = async () => {
+    if (!selectedMina) return;
+    try {
+      await actualizarMinaMutation.mutateAsync({
+        id: selectedMina.id_mina,
+        data: formData,
+      });
+      toast({
+        title: "Mina actualizada",
+        description: `La mina "${formData.nombre}" ha sido actualizada`,
+      });
+      setIsEditDialogOpen(false);
+      setSelectedMina(null);
+      setFormData({ nombre: "", codigo: "", ubicacion: "", empresa: "" });
+    } catch (err) {
+      toast({
+        title: "Error al actualizar",
+        description: err instanceof Error ? err.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMina = async () => {
+    if (!selectedMina) return;
+    try {
+      await eliminarMinaMutation.mutateAsync(selectedMina.id_mina);
+      toast({
+        title: "Mina eliminada",
+        description: `La mina "${selectedMina.nombre}" ha sido eliminada`,
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedMina(null);
+    } catch (err) {
+      toast({
+        title: "Error al eliminar",
+        description: err instanceof Error ? err.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   // Loading skeleton
@@ -327,11 +396,17 @@ export default function MinasPage() {
                           Ver detalles
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditMina(mina)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => {
+                          setSelectedMina(mina);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Eliminar
                       </DropdownMenuItem>
@@ -371,6 +446,104 @@ export default function MinasPage() {
           <span className="text-sm">Actualizando...</span>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Mina</DialogTitle>
+            <DialogDescription>
+              Modifica los datos de la mina
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-nombre">Nombre</Label>
+              <Input
+                id="edit-nombre"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                className="bg-background border-border/50"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-codigo">Código</Label>
+              <Input
+                id="edit-codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                className="bg-background border-border/50"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-ubicacion">Ubicación</Label>
+              <Input
+                id="edit-ubicacion"
+                value={formData.ubicacion}
+                onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+                className="bg-background border-border/50"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-empresa">Empresa</Label>
+              <Input
+                id="edit-empresa"
+                value={formData.empresa}
+                onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                className="bg-background border-border/50"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUpdateMina}
+              disabled={actualizarMinaMutation.isPending}
+              className="bg-primary text-primary-foreground"
+            >
+              {actualizarMinaMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar Cambios"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar mina?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente la mina
+              <span className="font-semibold text-foreground"> {selectedMina?.nombre}</span> y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMina}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {eliminarMinaMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

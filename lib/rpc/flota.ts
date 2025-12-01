@@ -51,3 +51,34 @@ export async function crearFlota(flota: {
   if (error) throw error;
   return data as Flota;
 }
+
+// ========== UPDATE & DELETE ==========
+
+export async function actualizarFlota(
+  id: number,
+  flota: Partial<{
+    nombre: string;
+    clase: ClaseFlota;
+    familia: FamiliaFlota;
+    tipo_especifico: string;
+    placa_o_credencial: string;
+    marca: string;
+    modelo: string;
+    anio_fabricacion: number;
+    capacidad_toneladas: number;
+  }>
+): Promise<Flota> {
+  const { data, error } = await supabase
+    .from("flota_minera")
+    .update(flota)
+    .eq("id_flota", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Flota;
+}
+
+export async function eliminarFlota(id: number): Promise<void> {
+  const { error } = await supabase.from("flota_minera").delete().eq("id_flota", id);
+  if (error) throw error;
+}

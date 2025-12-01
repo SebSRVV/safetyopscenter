@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, RotateCcw, AlertTriangle, CheckCircle, XCircle, Truck, TrafficCone, Users, MapPin } from "lucide-react";
+import { Play, RotateCcw, AlertTriangle, CheckCircle, XCircle, Truck, TrafficCone, Users, MapPin, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMinas } from "@/hooks/use-dashboard";
 
 type SimulationState = "idle" | "running" | "success" | "accident";
 type SemaforoState = "rojo" | "amarillo" | "verde";
@@ -34,7 +35,16 @@ export default function SimulacionPage() {
   const [selectedZona, setSelectedZona] = useState<ZonaType>("nivel-2000");
   const [scenarioType, setScenarioType] = useState<ScenarioType>("single-success");
   const [simulationState, setSimulationState] = useState<SimulationState>("idle");
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
   
+  const { data: minas } = useMinas();
+  
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+  
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
   const zonaActual = zonas.find(z => z.id === selectedZona);
   const [vehicle1, setVehicle1] = useState<VehicleState>({ x: 0, y: 48, rotation: 0, speed: 0, visible: true });
   const [vehicle2, setVehicle2] = useState<VehicleState>({ x: 100, y: 52, rotation: 180, speed: 0, visible: true });
@@ -227,9 +237,25 @@ export default function SimulacionPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Simulacion de Seguridad</h1>
-            <p className="text-muted-foreground mt-1">Mina Poderosa - Control de Trafico en Tuneles</p>
+            <p className="text-muted-foreground mt-1">{minaActual?.nombre || "Selecciona una mina"} - Control de Trafico en Tuneles</p>
           </div>
           <div className="flex items-center gap-3">
+            <Select
+              value={selectedMina?.toString() || ""}
+              onValueChange={(v) => setSelectedMina(parseInt(v))}
+            >
+              <SelectTrigger className="w-[200px] bg-card border-border/50">
+                <Mountain className="h-4 w-4 mr-2 text-primary" />
+                <SelectValue placeholder="Seleccionar mina" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                {(minas || []).map((mina) => (
+                  <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                    {mina.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button onClick={startSimulation} disabled={simulationState === "running"} className="bg-emerald-600 hover:bg-emerald-700">
               <Play className="h-4 w-4 mr-2" />Iniciar
             </Button>

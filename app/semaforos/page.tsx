@@ -29,8 +29,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSemaforos } from "@/hooks/use-dashboard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useMinas, useSemaforos } from "@/hooks/use-dashboard";
 import { useToast } from "@/hooks/use-toast";
+import { Mountain } from "lucide-react";
 
 const getEstadoIndicator = (estado: string) => {
   switch (estado) {
@@ -76,9 +84,18 @@ const getEstadoIndicator = (estado: string) => {
 
 export default function SemaforosPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
 
   const { toast } = useToast();
+  const { data: minas } = useMinas();
   const { data: semaforos, isLoading, error, refetch, isFetching } = useSemaforos();
+
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
 
   const filteredSemaforos = (semaforos || []).filter(
     (semaforo) =>
@@ -153,18 +170,36 @@ export default function SemaforosPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Semáforos</h1>
           <p className="text-muted-foreground mt-1">
-            Control de tráfico minero ({semaforos?.length || 0} registrados)
+            {minaActual?.nombre || "Todas las minas"} - Control de tráfico ({filteredSemaforos.length})
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={isFetching}
-          className="border-border/50"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
-          Actualizar
-        </Button>
+        <div className="flex gap-2">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="border-border/50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Actualizar
+          </Button>
+        </div>
       </motion.div>
 
       {/* Search */}

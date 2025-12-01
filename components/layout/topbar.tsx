@@ -11,7 +11,6 @@ import {
   Settings,
   ChevronDown,
   AlertTriangle,
-  Mountain,
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,13 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -73,13 +65,6 @@ const notifications = [
   },
 ];
 
-const zonasOperacion = [
-  { id: "all", name: "Todas las Zonas" },
-  { id: "1", name: "Nivel 2000 - Santa Maria" },
-  { id: "2", name: "Nivel 1800 - Pataz" },
-  { id: "3", name: "Rampa Principal - Poderosa" },
-  { id: "4", name: "Superficie - Planta Marañon" },
-];
 
 interface TopbarProps {
   sidebarCollapsed?: boolean;
@@ -87,7 +72,6 @@ interface TopbarProps {
 
 export function Topbar({ sidebarCollapsed = false }: TopbarProps) {
   const router = useRouter();
-  const [selectedZona, setSelectedZona] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [userData, setUserData] = useState<{ email: string; name: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,20 +110,6 @@ export function Topbar({ sidebarCollapsed = false }: TopbarProps) {
       className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-6"
     >
             <div className="flex items-center gap-4">
-                <Select value={selectedZona} onValueChange={setSelectedZona}>
-          <SelectTrigger className="w-[220px] bg-card border-border/50 hover:border-primary/50 transition-colors">
-            <Mountain className="h-4 w-4 mr-2 text-primary" />
-            <SelectValue placeholder="Seleccionar zona" />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            {zonasOperacion.map((zona) => (
-              <SelectItem key={zona.id} value={zona.id}>
-                {zona.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
                 <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input

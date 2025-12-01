@@ -13,6 +13,7 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
+  Mountain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -44,7 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTrabajadores, useCrearTrabajador } from "@/hooks/use-dashboard";
+import { useMinas, useTrabajadores, useCrearTrabajador } from "@/hooks/use-dashboard";
 import { useToast } from "@/hooks/use-toast";
 
 const getInitials = (nombre: string) => {
@@ -58,6 +66,7 @@ const getInitials = (nombre: string) => {
 
 export default function TrabajadoresPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
@@ -67,14 +76,31 @@ export default function TrabajadoresPage() {
   });
 
   const { toast } = useToast();
+  const { data: minas } = useMinas();
   const { data: trabajadores, isLoading, error, refetch, isFetching } = useTrabajadores();
   const crearTrabajadorMutation = useCrearTrabajador();
 
-  const filteredTrabajadores = (trabajadores || []).filter((trabajador) =>
-    trabajador.nombre_completo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    trabajador.doc_identidad?.includes(searchQuery) ||
-    trabajador.cargo?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
+
+  // Filtrar trabajadores por empresa (mina)
+  const filteredTrabajadores = (trabajadores || []).filter((trabajador) => {
+    const matchesSearch =
+      trabajador.nombre_completo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      trabajador.doc_identidad?.includes(searchQuery) ||
+      trabajador.cargo?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filtrar por empresa si hay mina seleccionada
+    const matchesMina = !minaActual || 
+      trabajador.empresa_contratista?.toLowerCase().includes(minaActual.empresa?.toLowerCase() || "") ||
+      trabajador.empresa_contratista?.toLowerCase().includes(minaActual.nombre?.toLowerCase() || "");
+    
+    return matchesSearch && matchesMina;
+  });
 
   const handleCreateTrabajador = async () => {
     if (!formData.nombre || !formData.doc) {
@@ -87,7 +113,10 @@ export default function TrabajadoresPage() {
     }
 
     try {
-      await crearTrabajadorMutation.mutateAsync(formData);
+      await crearTrabajadorMutation.mutateAsync({
+        ...formData,
+        empresa: formData.empresa || minaActual?.empresa || "",
+      });
       toast({
         title: "Trabajador creado",
         description: `${formData.nombre} ha sido registrado exitosamente`,
@@ -117,7 +146,7 @@ export default function TrabajadoresPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <Skeleton className="h-8 w-40 mb-2" />
+            <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
           </div>
           <Skeleton className="h-10 w-40" />
@@ -130,7 +159,6 @@ export default function TrabajadoresPage() {
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-28" />
               </div>
             ))}
           </CardContent>
@@ -168,10 +196,26 @@ export default function TrabajadoresPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Trabajadores</h1>
           <p className="text-muted-foreground mt-1">
-            Personal registrado ({trabajadores?.length || 0})
+            {minaActual?.nombre || "Todas las minas"} - Personal registrado ({filteredTrabajadores.length})
           </p>
         </div>
         <div className="flex gap-2">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             onClick={handleRefresh}
@@ -200,7 +244,7 @@ export default function TrabajadoresPage() {
                   <Label htmlFor="nombre">Nombre Completo *</Label>
                   <Input
                     id="nombre"
-                    placeholder="Carlos Mendoza Torres"
+                    placeholder="Juan Pérez García"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     className="bg-background border-border/50"
@@ -227,10 +271,10 @@ export default function TrabajadoresPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="empresa">Empresa Contratista</Label>
+                  <Label htmlFor="empresa">Empresa</Label>
                   <Input
                     id="empresa"
-                    placeholder="Servicios Mineros S.A."
+                    placeholder={minaActual?.empresa || "Empresa contratista"}
                     value={formData.empresa}
                     onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
                     className="bg-background border-border/50"
@@ -271,7 +315,7 @@ export default function TrabajadoresPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por nombre, documento, cargo..."
+            placeholder="Buscar por nombre, documento o cargo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-card border-border/50"
@@ -287,7 +331,7 @@ export default function TrabajadoresPage() {
           <p className="text-muted-foreground text-center max-w-md">
             {searchQuery
               ? "No se encontraron trabajadores con ese criterio"
-              : "Registra tu primer trabajador para comenzar"}
+              : "Registra tu primer trabajador"}
           </p>
           {!searchQuery && (
             <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -323,23 +367,21 @@ export default function TrabajadoresPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 border border-primary/20">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {getInitials(trabajador.nombre_completo)}
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {getInitials(trabajador.nombre_completo || "NN")}
                             </AvatarFallback>
                           </Avatar>
-                          <p className="font-medium">{trabajador.nombre_completo}</p>
+                          <span className="font-medium">{trabajador.nombre_completo}</span>
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         {trabajador.doc_identidad || "-"}
                       </TableCell>
-                      <TableCell>{trabajador.cargo || "-"}</TableCell>
                       <TableCell>
-                        {trabajador.empresa_contratista ? (
-                          <Badge variant="outline">{trabajador.empresa_contratista}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">Directo</span>
-                        )}
+                        <Badge variant="outline">{trabajador.cargo || "Sin cargo"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {trabajador.empresa_contratista || "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

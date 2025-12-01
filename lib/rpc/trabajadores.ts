@@ -44,3 +44,24 @@ export async function obtenerTrabajador(id: number): Promise<Trabajador | null> 
   if (error) throw error;
   return data as Trabajador | null;
 }
+
+// ========== UPDATE & DELETE ==========
+
+export async function actualizarTrabajador(
+  id: number,
+  trabajador: Partial<{ nombre_completo: string; doc_identidad: string; cargo: string; empresa_contratista: string }>
+): Promise<Trabajador> {
+  const { data, error } = await supabase
+    .from("trabajadores")
+    .update(trabajador)
+    .eq("id_trabajador", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Trabajador;
+}
+
+export async function eliminarTrabajador(id: number): Promise<void> {
+  const { error } = await supabase.from("trabajadores").delete().eq("id_trabajador", id);
+  if (error) throw error;
+}

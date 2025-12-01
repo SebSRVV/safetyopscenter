@@ -56,3 +56,24 @@ export async function instalarDispositivo(instalacion: {
   if (error) throw error;
   return data;
 }
+
+// ========== UPDATE & DELETE ==========
+
+export async function actualizarDispositivo(
+  id: number,
+  dispositivo: Partial<{ codigo: string; tipo: TipoDispositivo; marca_modelo: string }>
+): Promise<Dispositivo> {
+  const { data, error } = await supabase
+    .from("dispositivos_iot")
+    .update(dispositivo)
+    .eq("id_dispositivo", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Dispositivo;
+}
+
+export async function eliminarDispositivo(id: number): Promise<void> {
+  const { error } = await supabase.from("dispositivos_iot").delete().eq("id_dispositivo", id);
+  if (error) throw error;
+}

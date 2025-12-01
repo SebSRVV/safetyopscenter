@@ -3,11 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { obtenerDashboardResumen, DashboardResumen } from "@/lib/rpc/metrics";
 import { listarAlarmasPorMina, AlarmaDisparada } from "@/lib/rpc/alarmas";
-import { listarMinas, crearMina, Mina } from "@/lib/rpc/minas";
-import { listarFlota, crearFlota, Flota, ClaseFlota, FamiliaFlota } from "@/lib/rpc/flota";
-import { listarDispositivos, crearDispositivo, DispositivoListado, TipoDispositivo } from "@/lib/rpc/dispositivos";
+import { listarMinas, crearMina, actualizarMina, eliminarMina, Mina } from "@/lib/rpc/minas";
+import { listarFlota, crearFlota, actualizarFlota, eliminarFlota, Flota, ClaseFlota, FamiliaFlota } from "@/lib/rpc/flota";
+import { listarDispositivos, crearDispositivo, actualizarDispositivo, eliminarDispositivo, DispositivoListado, TipoDispositivo } from "@/lib/rpc/dispositivos";
 import { listarSemaforos, Semaforo } from "@/lib/rpc/semaforos";
-import { listarTrabajadores, crearTrabajador, Trabajador } from "@/lib/rpc/trabajadores";
+import { listarTrabajadores, crearTrabajador, actualizarTrabajador, eliminarTrabajador, Trabajador } from "@/lib/rpc/trabajadores";
 import { listarIncidentes, crearIncidente, Incidente, ClasificacionIncidente } from "@/lib/rpc/incidentes";
 
 // ========== MINAS ==========
@@ -24,6 +24,27 @@ export function useCrearMina() {
   return useMutation({
     mutationFn: (mina: { nombre: string; codigo: string; ubicacion: string; empresa: string }) => 
       crearMina(mina),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["minas"] });
+    },
+  });
+}
+
+export function useActualizarMina() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<{ nombre: string; codigo: string; ubicacion: string; empresa: string }> }) =>
+      actualizarMina(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["minas"] });
+    },
+  });
+}
+
+export function useEliminarMina() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => eliminarMina(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["minas"] });
     },
@@ -81,6 +102,27 @@ export function useCrearFlota() {
   });
 }
 
+export function useActualizarFlota() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Flota> }) =>
+      actualizarFlota(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["flota"] });
+    },
+  });
+}
+
+export function useEliminarFlota() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => eliminarFlota(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["flota"] });
+    },
+  });
+}
+
 // ========== DISPOSITIVOS ==========
 export function useDispositivos() {
   return useQuery<DispositivoListado[], Error>({
@@ -95,6 +137,27 @@ export function useCrearDispositivo() {
   return useMutation({
     mutationFn: (dispositivo: { codigo: string; tipo: TipoDispositivo; marca?: string }) => 
       crearDispositivo(dispositivo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dispositivos"] });
+    },
+  });
+}
+
+export function useActualizarDispositivo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<{ codigo: string; tipo: TipoDispositivo; marca_modelo: string }> }) =>
+      actualizarDispositivo(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dispositivos"] });
+    },
+  });
+}
+
+export function useEliminarDispositivo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => eliminarDispositivo(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dispositivos"] });
     },
@@ -124,6 +187,27 @@ export function useCrearTrabajador() {
   return useMutation({
     mutationFn: (trabajador: { nombre: string; doc: string; cargo?: string; empresa?: string }) => 
       crearTrabajador(trabajador),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trabajadores"] });
+    },
+  });
+}
+
+export function useActualizarTrabajador() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<{ nombre_completo: string; doc_identidad: string; cargo: string; empresa_contratista: string }> }) =>
+      actualizarTrabajador(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trabajadores"] });
+    },
+  });
+}
+
+export function useEliminarTrabajador() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => eliminarTrabajador(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trabajadores"] });
     },

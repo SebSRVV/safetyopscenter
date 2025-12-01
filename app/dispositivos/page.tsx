@@ -59,9 +59,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useDispositivos, useCrearDispositivo } from "@/hooks/use-dashboard";
+import { useMinas, useDispositivos, useCrearDispositivo } from "@/hooks/use-dashboard";
 import { useToast } from "@/hooks/use-toast";
 import { TipoDispositivo } from "@/lib/rpc/dispositivos";
+import { Mountain } from "lucide-react";
 
 const tiposDispositivo: { value: TipoDispositivo; label: string; icon: typeof Cpu }[] = [
   { value: "gps", label: "GPS", icon: MapPin },
@@ -85,6 +86,7 @@ const getTipoLabel = (tipo: string) => {
 export default function DispositivosPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTipo, setFilterTipo] = useState<string>("all");
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     codigo: "",
@@ -93,8 +95,16 @@ export default function DispositivosPage() {
   });
 
   const { toast } = useToast();
+  const { data: minas } = useMinas();
   const { data: dispositivos, isLoading, error, refetch, isFetching } = useDispositivos();
   const crearDispositivoMutation = useCrearDispositivo();
+
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
 
   const filteredDispositivos = (dispositivos || []).filter((dispositivo) => {
     const matchesSearch = dispositivo.codigo.toLowerCase().includes(searchQuery.toLowerCase());
@@ -197,10 +207,26 @@ export default function DispositivosPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dispositivos IoT</h1>
           <p className="text-muted-foreground mt-1">
-            Sensores y equipos registrados ({dispositivos?.length || 0})
+            {minaActual?.nombre || "Todas las minas"} - Sensores y equipos ({filteredDispositivos.length})
           </p>
         </div>
         <div className="flex gap-2">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             onClick={handleRefresh}

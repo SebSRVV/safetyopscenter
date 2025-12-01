@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase/client";
 
+// ========== CRUD OPERATIONS ==========
+
 export interface Mina {
   id_mina: number;
   nombre: string;
@@ -76,4 +78,44 @@ export async function crearLugar(lugar: {
   });
   if (error) throw error;
   return data as Lugar;
+}
+
+// ========== UPDATE & DELETE (Direct table access) ==========
+
+export async function actualizarMina(
+  id: number,
+  mina: Partial<{ nombre: string; codigo: string; ubicacion: string; empresa: string }>
+): Promise<Mina> {
+  const { data, error } = await supabase
+    .from("minas")
+    .update(mina)
+    .eq("id_mina", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Mina;
+}
+
+export async function eliminarMina(id: number): Promise<void> {
+  const { error } = await supabase.from("minas").delete().eq("id_mina", id);
+  if (error) throw error;
+}
+
+export async function actualizarLugar(
+  id: number,
+  lugar: Partial<{ nombre: string; tipo: Lugar["tipo"]; descripcion: string; latitud: number; longitud: number }>
+): Promise<Lugar> {
+  const { data, error } = await supabase
+    .from("lugar_de_los_dispositivos")
+    .update(lugar)
+    .eq("id_lugar", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Lugar;
+}
+
+export async function eliminarLugar(id: number): Promise<void> {
+  const { error } = await supabase.from("lugar_de_los_dispositivos").delete().eq("id_lugar", id);
+  if (error) throw error;
 }
