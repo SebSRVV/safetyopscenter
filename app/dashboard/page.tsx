@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -40,18 +40,19 @@ const getSeverityColor = (severidad: string) => {
 };
 
 export default function DashboardPage() {
-  const [selectedMina, setSelectedMina] = useState<number | null>(null);
-  
   const { data: minas, isLoading: loadingMinas } = useMinas();
-  const { data: resumen, isLoading: loadingResumen } = useDashboardResumen(selectedMina);
-  const { data: alarmas, isLoading: loadingAlarmas } = useAlarmas(selectedMina);
-  const { data: flota, isLoading: loadingFlota } = useFlota(selectedMina);
-
-  useEffect(() => {
-    if (minas && minas.length > 0 && !selectedMina) {
-      setSelectedMina(minas[0].id_mina);
-    }
-  }, [minas, selectedMina]);
+  
+  // Derive selectedMina from minas data instead of using useEffect
+  const defaultMinaId = useMemo(() => {
+    return minas && minas.length > 0 ? minas[0].id_mina : null;
+  }, [minas]);
+  
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
+  const activeMinaId = selectedMina ?? defaultMinaId;
+  
+  const { data: resumen, isLoading: loadingResumen } = useDashboardResumen(activeMinaId);
+  const { data: alarmas, isLoading: loadingAlarmas } = useAlarmas(activeMinaId);
+  const { data: flota, isLoading: loadingFlota } = useFlota(activeMinaId);
 
   const minaActual = minas?.find(m => m.id_mina === selectedMina);
   const isLoading = loadingMinas || loadingResumen;

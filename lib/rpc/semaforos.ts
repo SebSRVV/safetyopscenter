@@ -6,7 +6,7 @@ export type EstadoSemaforo = "rojo" | "amarillo" | "verde" | "apagado" | "interm
 export interface Semaforo {
   id_semaforo: number;
   id_lugar?: number;
-  codigo: string;
+  codigo?: string;
   nombre?: string;
   estado_actual: EstadoSemaforo;
   creado_por?: number;
