@@ -16,10 +16,10 @@ type ScenarioType = "single-success" | "single-accident" | "dual-success" | "dua
 type ZonaType = "nivel-2000" | "rampa-principal" | "nivel-1800" | "cruce-pataz";
 
 const zonas = [
-  { id: "nivel-2000", nombre: "Nivel 2000 - Santa Maria", descripcion: "Galeria principal de extraccion" },
-  { id: "rampa-principal", nombre: "Rampa Principal", descripcion: "Acceso vehicular a niveles inferiores" },
-  { id: "nivel-1800", nombre: "Nivel 1800 - Pataz", descripcion: "Zona de desarrollo activo" },
-  { id: "cruce-pataz", nombre: "Cruce Nivel Pataz", descripcion: "Interseccion de galerias" },
+  { id: "nivel-2000", nombre: "Nivel 2000 - Santa Maria", descripcion: "Zona interna de la mina" },
+  { id: "rampa-principal", nombre: "Rampa Principal", descripcion: "Zona externa - Acceso vehicular" },
+  { id: "nivel-1800", nombre: "Nivel 1800 - Pataz", descripcion: "Zona de humedad y neblina" },
+  { id: "cruce-pataz", nombre: "Cruce Nivel Pataz", descripcion: "Zona de extraccion" },
 ];
 
 interface VehicleState {
@@ -230,21 +230,6 @@ export default function SimulacionPage() {
             <p className="text-muted-foreground mt-1">Mina Poderosa - Control de Trafico en Tuneles</p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={selectedZona} onValueChange={(v) => { setSelectedZona(v as ZonaType); resetSimulation(); }}>
-              <SelectTrigger className="w-[240px] bg-card border-border/50">
-                <MapPin className="h-4 w-4 mr-2 text-primary" />
-                <SelectValue placeholder="Seleccionar zona" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {zonas.map((zona) => (
-                  <SelectItem key={zona.id} value={zona.id}>
-                    <div className="flex flex-col">
-                      <span>{zona.nombre}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button onClick={startSimulation} disabled={simulationState === "running"} className="bg-emerald-600 hover:bg-emerald-700">
               <Play className="h-4 w-4 mr-2" />Iniciar
             </Button>
@@ -281,7 +266,7 @@ export default function SimulacionPage() {
           <CardContent className="p-0">
             <div className="relative h-[480px] overflow-hidden bg-slate-900">
               
-              {/* ========== ZONA: NIVEL 2000 - GALERIA INTERNA ========== */}
+              {/* ========== ZONA: NIVEL 2000 - ZONA INTERNA DE LA MINA ========== */}
               {selectedZona === "nivel-2000" && (
                 <>
                   {/* Fondo de galeria subterranea */}
@@ -338,13 +323,13 @@ export default function SimulacionPage() {
                   {/* Piso de galeria */}
                   <div className="absolute left-24 right-24 bottom-0 h-32 bg-gradient-to-t from-stone-800 via-stone-700/50 to-transparent">
                     <div className="absolute top-4 left-4 right-4 text-center">
-                      <span className="text-amber-500/50 text-xs font-bold tracking-widest">GALERIA SANTA MARIA - NIVEL 2000</span>
+                      <span className="text-amber-500/50 text-xs font-bold tracking-widest">ZONA INTERNA - SANTA MARIA - NIVEL 2000</span>
                     </div>
                   </div>
                 </>
               )}
 
-              {/* ========== ZONA: RAMPA PRINCIPAL - EXTERIOR CON BARRANCO ========== */}
+              {/* ========== ZONA: RAMPA PRINCIPAL - ZONA EXTERNA ========== */}
               {selectedZona === "rampa-principal" && (
                 <>
                   {/* Cielo de montaña */}
@@ -394,7 +379,7 @@ export default function SimulacionPage() {
                 </>
               )}
 
-              {/* ========== ZONA: NIVEL 1800 - TUNEL ESTRECHO ========== */}
+              {/* ========== ZONA: NIVEL 1800 - HUMEDAD Y NEBLINA ========== */}
               {selectedZona === "nivel-1800" && (
                 <>
                   {/* Fondo de tunel oscuro */}
@@ -455,7 +440,7 @@ export default function SimulacionPage() {
                   {/* Piso con charcos */}
                   <div className="absolute left-28 right-28 bottom-0 h-28 bg-gradient-to-t from-slate-900 to-transparent">
                     <div className="absolute top-6 left-4 right-4 text-center">
-                      <span className="text-cyan-400/50 text-xs font-bold tracking-widest">TUNEL PATAZ - NIVEL 1800 - PRECAUCION HUMEDAD</span>
+                      <span className="text-cyan-400/50 text-xs font-bold tracking-widest">ZONA HUMEDAD/NEBLINA - PATAZ - NIVEL 1800</span>
                     </div>
                     {[...Array(6)].map((_, i) => (
                       <motion.div key={i} className="absolute bg-cyan-900/30 rounded-full"
@@ -466,7 +451,7 @@ export default function SimulacionPage() {
                 </>
               )}
 
-              {/* ========== ZONA: CRUCE PATAZ - INTERSECCION ========== */}
+              {/* ========== ZONA: CRUCE PATAZ - ZONA DE EXTRACCION ========== */}
               {selectedZona === "cruce-pataz" && (
                 <>
                   {/* Fondo de cruce amplio */}
@@ -525,7 +510,7 @@ export default function SimulacionPage() {
                   {/* Señalizacion del cruce */}
                   <div className="absolute left-20 right-20 bottom-0 h-24 bg-gradient-to-t from-stone-800 to-transparent">
                     <div className="absolute top-4 left-4 right-4 text-center">
-                      <span className="text-yellow-400/60 text-xs font-bold tracking-widest">CRUCE PRINCIPAL - CEDA EL PASO - SEMAFORO ACTIVO</span>
+                      <span className="text-yellow-400/60 text-xs font-bold tracking-widest">ZONA DE EXTRACCION - CRUCE PATAZ - SEMAFORO ACTIVO</span>
                     </div>
                     {/* Flechas direccionales */}
                     <div className="absolute bottom-4 left-[25%] text-emerald-400/50 text-2xl">→</div>
@@ -739,17 +724,29 @@ export default function SimulacionPage() {
             </CardContent>
           </Card>
           <Card className="bg-card border-border/50">
-            <CardHeader className="pb-2"><CardTitle className="text-base">Zona Activa</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Zona de Simulación</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">{zonaActual?.nombre}</span>
+              <div className="space-y-3">
+                <Select value={selectedZona} onValueChange={(v) => { setSelectedZona(v as ZonaType); resetSimulation(); }}>
+                  <SelectTrigger className="w-full bg-background border-border/50 text-sm">
+                    <SelectValue placeholder="Seleccionar zona" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {zonas.map((zona) => (
+                      <SelectItem key={zona.id} value={zona.id}>
+                        {zona.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="h-3 w-3 text-primary" />
+                    <span className="text-xs font-medium">{zonaActual?.nombre}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{zonaActual?.descripcion}</p>
                 </div>
-                <p className="text-xs text-muted-foreground">{zonaActual?.descripcion}</p>
-                <div className="pt-2 border-t border-border/30">
-                  <p className="text-[10px] text-muted-foreground">Mina Poderosa - La Libertad, Peru</p>
-                </div>
+                <p className="text-[10px] text-muted-foreground text-center">Mina Poderosa - La Libertad, Peru</p>
               </div>
             </CardContent>
           </Card>

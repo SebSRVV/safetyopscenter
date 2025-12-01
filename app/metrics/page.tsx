@@ -1,21 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Truck,
   FileWarning,
   Mountain,
+  RefreshCw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/cards/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { MiningMap } from "@/components/maps/mining-map";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,6 +32,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMinas, useAlarmas, useFlota, useIncidentes, useDashboardResumen } from "@/hooks/use-dashboard";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data
 const kpisGlobales = {
@@ -86,6 +96,39 @@ const mapMarkers = zonasPeligrosas.map((zona) => ({
 }));
 
 export default function MetricsPage() {
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
+  const { toast } = useToast();
+  
+  const { data: minas } = useMinas();
+  const { data: alarmas, refetch: refetchAlarmas, isFetching } = useAlarmas(selectedMina);
+  const { data: flota } = useFlota(selectedMina);
+  const { data: incidentes } = useIncidentes(selectedMina);
+  const { data: resumen } = useDashboardResumen(selectedMina);
+  
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+  
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
+  
+  // Calcular KPIs reales
+  const realKpis = {
+    incidentesTotal: incidentes?.length || 0,
+    alarmasCriticas: alarmas?.filter((a) => a.severidad === "critica").length || 0,
+    alarmasTotal: alarmas?.length || 0,
+    flotaActiva: flota?.length || 0,
+    flotaTotal: flota?.length || 0,
+  };
+  
+  const handleRefresh = () => {
+    refetchAlarmas();
+    toast({
+      title: "Actualizando",
+      description: "Cargando métricas desde Supabase...",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,44 +136,74 @@ export default function MetricsPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
-        <h1 className="text-3xl font-bold text-foreground">Métricas</h1>
-        <p className="text-muted-foreground mt-1">
-          Análisis y estadísticas del sistema de prevención
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Métricas</h1>
+          <p className="text-muted-foreground mt-1">
+            {minaActual?.nombre || "Selecciona una mina"} - Análisis y estadísticas
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isFetching || !selectedMina}
+            className="border-border/50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Actualizar
+          </Button>
+        </div>
       </motion.div>
 
-      {/* KPIs Globales */}
+      {/* KPIs Globales - Datos reales de Supabase */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Incidentes Hoy"
-          value={kpisGlobales.incidentesHoy}
-          description={`${kpisGlobales.incidentesMes} este mes`}
+          title="Incidentes"
+          value={realKpis.incidentesTotal}
+          description="Total registrados"
           icon={FileWarning}
           variant="warning"
-          trend={{ value: 15, isPositive: true }}
+          trend={{ value: 0, isPositive: true }}
           delay={0}
         />
         <StatCard
           title="Alarmas Críticas"
-          value={kpisGlobales.alarmasCriticasHoy}
-          description={`${kpisGlobales.alarmasActivas} activas total`}
+          value={realKpis.alarmasCriticas}
+          description={`${realKpis.alarmasTotal} alarmas total`}
           icon={AlertTriangle}
           variant="critical"
           delay={0.1}
         />
         <StatCard
-          title="Flota Activa"
-          value={`${kpisGlobales.flotaActiva}/${kpisGlobales.flotaTotal}`}
-          description={`${Math.round((kpisGlobales.flotaActiva / kpisGlobales.flotaTotal) * 100)}% operativa`}
+          title="Flota"
+          value={realKpis.flotaActiva}
+          description="Unidades registradas"
           icon={Truck}
           variant="success"
           delay={0.2}
         />
         <StatCard
-          title="Dispositivos"
-          value={`${kpisGlobales.dispositivosActivos}/${kpisGlobales.dispositivosTotal}`}
-          description={`${Math.round((kpisGlobales.dispositivosActivos / kpisGlobales.dispositivosTotal) * 100)}% conectados`}
+          title="Dashboard"
+          value={resumen ? "Activo" : "Sin datos"}
+          description={minaActual?.nombre || "Selecciona mina"}
           icon={BarChart3}
           variant="info"
           delay={0.3}

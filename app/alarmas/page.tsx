@@ -5,17 +5,19 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   Search,
-  Filter,
   Bell,
   CheckCircle,
   Clock,
-  Settings,
   Eye,
+  RefreshCw,
+  Loader2,
+  Mountain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -31,168 +33,91 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/cards/stat-card";
-import { BarChart } from "@/components/charts/bar-chart";
+import { useMinas, useAlarmas } from "@/hooks/use-dashboard";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data
-const alarmasData = [
-  {
-    id: "1",
-    tipo: "velocidad",
-    severidad: "critica",
-    mensaje: "CAM-001 excede límite de velocidad en Zona A",
-    unidad: "CAM-001",
-    lugar: "Zona de Carga A",
-    mina: "Mina Norte",
-    valorDetectado: 65,
-    umbral: 40,
-    estado: "activa",
-    fecha: "2024-01-15 10:30:00",
-  },
-  {
-    id: "2",
-    tipo: "proximidad",
-    severidad: "alta",
-    mensaje: "Vehículos muy cerca en cruce principal",
-    unidad: "CAM-002",
-    lugar: "Cruce Principal",
-    mina: "Mina Norte",
-    valorDetectado: 3,
-    umbral: 10,
-    estado: "activa",
-    fecha: "2024-01-15 10:25:00",
-  },
-  {
-    id: "3",
-    tipo: "zona_restringida",
-    severidad: "media",
-    mensaje: "EXC-001 cerca de área restringida",
-    unidad: "EXC-001",
-    lugar: "Polvorín",
-    mina: "Mina Norte",
-    valorDetectado: null,
-    umbral: null,
-    estado: "reconocida",
-    fecha: "2024-01-15 10:15:00",
-  },
-  {
-    id: "4",
-    tipo: "fatiga",
-    severidad: "alta",
-    mensaje: "Operador muestra signos de fatiga",
-    unidad: "CAM-003",
-    lugar: "Ruta Principal",
-    mina: "Mina Sur",
-    valorDetectado: null,
-    umbral: null,
-    estado: "activa",
-    fecha: "2024-01-15 10:00:00",
-  },
-  {
-    id: "5",
-    tipo: "velocidad",
-    severidad: "media",
-    mensaje: "VEH-001 velocidad elevada",
-    unidad: "VEH-001",
-    lugar: "Oficinas",
-    mina: "Mina Norte",
-    valorDetectado: 50,
-    umbral: 40,
-    estado: "resuelta",
-    fecha: "2024-01-15 09:45:00",
-  },
-];
-
-const alarmasPorTipo = [
-  { tipo: "Velocidad", cantidad: 45 },
-  { tipo: "Proximidad", cantidad: 32 },
-  { tipo: "Zona Rest.", cantidad: 18 },
-  { tipo: "Fatiga", cantidad: 12 },
-  { tipo: "Colisión", cantidad: 5 },
-];
-
-const getSeveridadBadge = (severidad: string) => {
+const getSeverityColor = (severidad: string) => {
   switch (severidad) {
     case "critica":
-      return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Crítica</Badge>;
+      return "bg-red-500/20 text-red-400 border-red-500/30";
     case "alta":
-      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Alta</Badge>;
+      return "bg-orange-500/20 text-orange-400 border-orange-500/30";
     case "media":
-      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Media</Badge>;
+      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
     case "baja":
-      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Baja</Badge>;
+      return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     default:
-      return <Badge variant="outline">{severidad}</Badge>;
+      return "bg-gray-500/20 text-gray-400 border-gray-500/30";
   }
 };
 
-const getEstadoBadge = (estado: string) => {
-  switch (estado) {
-    case "activa":
-      return (
-        <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-          <Bell className="h-3 w-3 mr-1" />
-          Activa
-        </Badge>
-      );
-    case "reconocida":
-      return (
-        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-          <Clock className="h-3 w-3 mr-1" />
-          Reconocida
-        </Badge>
-      );
-    case "resuelta":
-      return (
-        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Resuelta
-        </Badge>
-      );
+const getTipoIcon = (tipo: string) => {
+  switch (tipo) {
+    case "velocidad":
+      return "🚗";
+    case "proximidad":
+      return "📡";
+    case "zona_restringida":
+      return "⛔";
+    case "fatiga":
+      return "😴";
     default:
-      return <Badge variant="outline">{estado}</Badge>;
+      return "⚠️";
   }
-};
-
-const getTipoBadge = (tipo: string) => {
-  const tipos: Record<string, string> = {
-    velocidad: "Velocidad",
-    proximidad: "Proximidad",
-    zona_restringida: "Zona Restringida",
-    fatiga: "Fatiga",
-    colision: "Colisión",
-  };
-  return tipos[tipo] || tipo;
 };
 
 export default function AlarmasPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterTipo, setFilterTipo] = useState<string>("all");
+  const [selectedMina, setSelectedMina] = useState<number | null>(null);
   const [filterSeveridad, setFilterSeveridad] = useState<string>("all");
-  const [filterEstado, setFilterEstado] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState("todas");
 
-  const filteredAlarmas = alarmasData.filter((alarma) => {
-    const matchesSearch =
-      alarma.mensaje.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alarma.unidad.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTipo = filterTipo === "all" || alarma.tipo === filterTipo;
+  const { toast } = useToast();
+  const { data: minas, isLoading: loadingMinas } = useMinas();
+  const { data: alarmas, isLoading: loadingAlarmas, refetch, isFetching } = useAlarmas(selectedMina);
+
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+
+  const filteredAlarmas = (alarmas || []).filter((alarma) => {
+    const matchesSearch = alarma.mensaje?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSeveridad = filterSeveridad === "all" || alarma.severidad === filterSeveridad;
-    const matchesEstado = filterEstado === "all" || alarma.estado === filterEstado;
-    const matchesTab =
-      activeTab === "todas" ||
-      (activeTab === "activas" && alarma.estado === "activa") ||
-      (activeTab === "resueltas" && alarma.estado === "resuelta");
-    return matchesSearch && matchesTipo && matchesSeveridad && matchesEstado && matchesTab;
+    return matchesSearch && matchesSeveridad;
   });
 
   const stats = {
-    total: alarmasData.length,
-    activas: alarmasData.filter((a) => a.estado === "activa").length,
-    criticas: alarmasData.filter((a) => a.severidad === "critica" && a.estado === "activa").length,
-    resueltas: alarmasData.filter((a) => a.estado === "resuelta").length,
+    total: alarmas?.length || 0,
+    criticas: alarmas?.filter((a) => a.severidad === "critica").length || 0,
+    altas: alarmas?.filter((a) => a.severidad === "alta").length || 0,
+    medias: alarmas?.filter((a) => a.severidad === "media").length || 0,
   };
+
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Actualizando",
+      description: "Cargando alarmas desde Supabase...",
+    });
+  };
+
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
+
+  // Loading
+  if (loadingMinas) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -206,180 +131,208 @@ export default function AlarmasPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Alarmas</h1>
           <p className="text-muted-foreground mt-1">
-            Monitoreo y gestión de alarmas del sistema
+            {minaActual?.nombre || "Selecciona una mina"} - Sistema de alertas en tiempo real
           </p>
         </div>
-        <Button variant="outline" className="border-border/50">
-          <Settings className="h-4 w-4 mr-2" />
-          Configurar Umbrales
-        </Button>
+        <div className="flex items-center gap-3">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isFetching || !selectedMina}
+            className="border-border/50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Actualizar
+          </Button>
+        </div>
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         <StatCard
           title="Total Alarmas"
           value={stats.total}
-          description="Últimas 24 horas"
           icon={Bell}
-          variant="default"
-          delay={0}
-        />
-        <StatCard
-          title="Activas"
-          value={stats.activas}
-          description="Requieren atención"
-          icon={AlertTriangle}
-          variant="warning"
-          delay={0.1}
+          trend={{ value: 0, isPositive: true }}
         />
         <StatCard
           title="Críticas"
           value={stats.criticas}
-          description="Prioridad máxima"
           icon={AlertTriangle}
-          variant="critical"
-          delay={0.2}
+          trend={{ value: 0, isPositive: false }}
         />
         <StatCard
-          title="Resueltas"
-          value={stats.resueltas}
-          description="Hoy"
-          icon={CheckCircle}
-          variant="success"
-          delay={0.3}
+          title="Altas"
+          value={stats.altas}
+          icon={Clock}
+          trend={{ value: 0, isPositive: false }}
         />
-      </div>
+        <StatCard
+          title="Medias"
+          value={stats.medias}
+          icon={CheckCircle}
+          trend={{ value: 0, isPositive: true }}
+        />
+      </motion.div>
 
-      {/* Chart */}
-      <BarChart
-        title="Alarmas por Tipo (Últimos 7 días)"
-        data={alarmasPorTipo}
-        bars={[{ dataKey: "cantidad", name: "Cantidad", color: "#ef4444" }]}
-        xAxisKey="tipo"
-        height={250}
-        colorByValue
-        delay={0.4}
-      />
-
-      {/* Tabs and Filters */}
+      {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.5 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+        className="flex flex-col sm:flex-row gap-4"
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <TabsList className="bg-card border border-border/50">
-              <TabsTrigger value="todas">Todas</TabsTrigger>
-              <TabsTrigger value="activas">Activas</TabsTrigger>
-              <TabsTrigger value="resueltas">Resueltas</TabsTrigger>
-            </TabsList>
-
-            <div className="flex flex-wrap gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Buscar..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-[200px] bg-card border-border/50"
-                />
-              </div>
-              <Select value={filterTipo} onValueChange={setFilterTipo}>
-                <SelectTrigger className="w-[150px] bg-card border-border/50">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="velocidad">Velocidad</SelectItem>
-                  <SelectItem value="proximidad">Proximidad</SelectItem>
-                  <SelectItem value="zona_restringida">Zona Restringida</SelectItem>
-                  <SelectItem value="fatiga">Fatiga</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterSeveridad} onValueChange={setFilterSeveridad}>
-                <SelectTrigger className="w-[150px] bg-card border-border/50">
-                  <SelectValue placeholder="Severidad" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="critica">Crítica</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="media">Media</SelectItem>
-                  <SelectItem value="baja">Baja</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <TabsContent value={activeTab} className="mt-0">
-            <Card className="bg-card border-border/50">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border/50">
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Severidad</TableHead>
-                      <TableHead>Mensaje</TableHead>
-                      <TableHead>Unidad</TableHead>
-                      <TableHead>Lugar</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAlarmas.map((alarma) => (
-                      <TableRow key={alarma.id} className="border-border/50">
-                        <TableCell>
-                          <Badge variant="outline">{getTipoBadge(alarma.tipo)}</Badge>
-                        </TableCell>
-                        <TableCell>{getSeveridadBadge(alarma.severidad)}</TableCell>
-                        <TableCell className="max-w-[250px]">
-                          <p className="truncate">{alarma.mensaje}</p>
-                          {alarma.valorDetectado && (
-                            <p className="text-xs text-muted-foreground">
-                              Valor: {alarma.valorDetectado} (Umbral: {alarma.umbral})
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                            {alarma.unidad}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{alarma.lugar}</TableCell>
-                        <TableCell>{getEstadoBadge(alarma.estado)}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {new Date(alarma.fecha).toLocaleString("es-CL")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {alarma.estado === "activa" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-yellow-500 hover:text-yellow-400"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar alarmas..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-card border-border/50"
+          />
+        </div>
+        <Select value={filterSeveridad} onValueChange={setFilterSeveridad}>
+          <SelectTrigger className="w-[180px] bg-card border-border/50">
+            <SelectValue placeholder="Severidad" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="critica">Críticas</SelectItem>
+            <SelectItem value="alta">Altas</SelectItem>
+            <SelectItem value="media">Medias</SelectItem>
+            <SelectItem value="baja">Bajas</SelectItem>
+          </SelectContent>
+        </Select>
       </motion.div>
+
+      {/* No mina selected */}
+      {!selectedMina && (
+        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
+          <Mountain className="h-16 w-16 text-muted-foreground/50" />
+          <h2 className="text-xl font-semibold">Selecciona una mina</h2>
+          <p className="text-muted-foreground">Elige una mina para ver sus alarmas</p>
+        </div>
+      )}
+
+      {/* Loading alarmas */}
+      {selectedMina && loadingAlarmas && (
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-8 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3">Cargando alarmas...</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {selectedMina && !loadingAlarmas && filteredAlarmas.length === 0 && (
+        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
+          <Bell className="h-16 w-16 text-muted-foreground/50" />
+          <h2 className="text-xl font-semibold">No hay alarmas</h2>
+          <p className="text-muted-foreground">
+            {searchQuery || filterSeveridad !== "all"
+              ? "No se encontraron alarmas con ese criterio"
+              : "No hay alarmas registradas para esta mina"}
+          </p>
+        </div>
+      )}
+
+      {/* Table */}
+      {selectedMina && !loadingAlarmas && filteredAlarmas.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <Card className="bg-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                Alarmas Recientes ({filteredAlarmas.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50">
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Severidad</TableHead>
+                    <TableHead>Mensaje</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAlarmas.map((alarma) => (
+                    <TableRow key={alarma.id_alarma} className="border-border/50">
+                      <TableCell>
+                        <span className="text-lg mr-2">⚠️</span>
+                        <span className="capitalize">Alarma #{alarma.id_alarma}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getSeverityColor(alarma.severidad)}>
+                          {alarma.severidad}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {alarma.mensaje || "Sin mensaje"}
+                      </TableCell>
+                      <TableCell>
+                        {alarma.valor_detectado !== null ? (
+                          <span className="font-mono">{alarma.valor_detectado}</span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {alarma.ts_inicio
+                          ? new Date(alarma.ts_inicio).toLocaleString("es-PE")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Fetching indicator */}
+      {isFetching && !loadingAlarmas && (
+        <div className="fixed bottom-4 right-4 bg-card border border-border rounded-lg px-4 py-2 shadow-lg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span className="text-sm">Actualizando...</span>
+        </div>
+      )}
     </div>
   );
 }

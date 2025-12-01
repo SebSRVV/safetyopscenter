@@ -8,6 +8,7 @@ import { listarFlota, crearFlota, Flota, ClaseFlota, FamiliaFlota } from "@/lib/
 import { listarDispositivos, crearDispositivo, DispositivoListado, TipoDispositivo } from "@/lib/rpc/dispositivos";
 import { listarSemaforos, Semaforo } from "@/lib/rpc/semaforos";
 import { listarTrabajadores, crearTrabajador, Trabajador } from "@/lib/rpc/trabajadores";
+import { listarIncidentes, crearIncidente, Incidente, ClasificacionIncidente } from "@/lib/rpc/incidentes";
 
 // ========== MINAS ==========
 export function useMinas() {
@@ -125,6 +126,38 @@ export function useCrearTrabajador() {
       crearTrabajador(trabajador),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trabajadores"] });
+    },
+  });
+}
+
+// ========== INCIDENTES ==========
+export function useIncidentes(idMina: number | null) {
+  return useQuery<Incidente[], Error>({
+    queryKey: ["incidentes", idMina],
+    queryFn: () => listarIncidentes(idMina || undefined),
+    enabled: !!idMina,
+    staleTime: 30000,
+  });
+}
+
+export function useCrearIncidente() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (incidente: {
+      id_mina: number;
+      id_lugar?: number;
+      id_flota?: number;
+      id_trabajador?: number;
+      tipo: string;
+      clasificacion: ClasificacionIncidente;
+      descripcion?: string;
+      dano_personas?: string;
+      dano_material?: string;
+      causa_probable?: string;
+      acciones?: string;
+    }) => crearIncidente(incidente),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidentes"] });
     },
   });
 }
