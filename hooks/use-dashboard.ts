@@ -13,7 +13,7 @@ import {
 import { listarAlarmasPorMina, crearAlarma, AlarmaDisparada, SeveridadAlarma } from "@/lib/rpc/alarmas";
 import { listarMinas, crearMina, actualizarMina, eliminarMina, Mina } from "@/lib/rpc/minas";
 import { listarFlota, crearFlota, actualizarFlota, eliminarFlota, Flota, ClaseFlota, FamiliaFlota } from "@/lib/rpc/flota";
-import { listarDispositivos, crearDispositivo, actualizarDispositivo, eliminarDispositivo, DispositivoListado, TipoDispositivo } from "@/lib/rpc/dispositivos";
+import { listarDispositivos, crearDispositivo, actualizarDispositivo, eliminarDispositivo, DispositivoAsignado, TipoDispositivo } from "@/lib/rpc/dispositivos";
 import { listarSemaforos, crearSemaforo, Semaforo, EstadoSemaforo } from "@/lib/rpc/semaforos";
 import { listarTrabajadores, crearTrabajador, actualizarTrabajador, eliminarTrabajador, Trabajador } from "@/lib/rpc/trabajadores";
 import { listarIncidentes, crearIncidente, Incidente, ClasificacionIncidente } from "@/lib/rpc/incidentes";
@@ -175,10 +175,10 @@ export function useEliminarFlota() {
 
 // ========== DISPOSITIVOS ==========
 export function useDispositivos() {
-  return useQuery<DispositivoListado[], Error>({
+  return useQuery<DispositivoAsignado[], Error>({
     queryKey: ["dispositivos"],
     queryFn: listarDispositivos,
-    staleTime: 60000,
+    staleTime: 60 * 1000, // 1 minuto
   });
 }
 
@@ -250,7 +250,7 @@ export function useTrabajadores() {
 export function useCrearTrabajador() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (trabajador: { nombre: string; doc: string; cargo?: string; empresa?: string }) => 
+    mutationFn: (trabajador: { nombre_completo: string; doc_identidad: string; cargo: string; empresa_contratista: string }) => 
       crearTrabajador(trabajador),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trabajadores"] });

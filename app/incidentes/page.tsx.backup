@@ -72,17 +72,17 @@ const estadoColors = {
 
 export default function IncidentesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterTipo, setFilterTipo] = useState<string>("all");
-  const [filterSeveridad, setFilterSeveridad] = useState<string>("all");
-  const [filterEstado, setFilterEstado] = useState<string>("all");
+  const [filterTipo, setFilterTipo] = useState<string>("");
+  const [filterSeveridad, setFilterSeveridad] = useState<string>("");
+  const [filterEstado, setFilterEstado] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedIncidente, setSelectedIncidente] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   const { incidentes, loading, error, refetch } = useIncidentes({
-    tipo: filterTipo !== "all" ? filterTipo : undefined,
-    severidad: filterSeveridad !== "all" ? filterSeveridad : undefined,
-    estado: filterEstado !== "all" ? filterEstado : undefined,
+    tipo: filterTipo || undefined,
+    severidad: filterSeveridad || undefined,
+    estado: filterEstado || undefined,
   });
   
   const { crearIncidente, cerrarIncidente, iniciarInvestigacion, eliminarIncidente, loading: loadingAction } = useCrearIncidente();
@@ -231,11 +231,11 @@ export default function IncidentesPage() {
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <FileWarning className="h-8 w-8 text-red-500" />
             Gestión de Incidentes
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-gray-600 mt-1">
             Reporta y gestiona todos los incidentes de seguridad y operacionales
           </p>
         </div>
@@ -408,11 +408,11 @@ export default function IncidentesPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="flex flex-wrap gap-4 items-center p-4 bg-card rounded-lg border border-border/50"
+        className="flex flex-wrap gap-4 items-center p-4 bg-white rounded-lg border"
       >
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar incidentes..."
               value={searchTerm}
@@ -426,7 +426,7 @@ export default function IncidentesPage() {
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="">Todos los tipos</SelectItem>
             <SelectItem value="Falla Mecánica">Falla Mecánica</SelectItem>
             <SelectItem value="Derrame">Derrame</SelectItem>
             <SelectItem value="Caída Altura">Caída Altura</SelectItem>
@@ -439,7 +439,7 @@ export default function IncidentesPage() {
             <SelectValue placeholder="Severidad" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las severidades</SelectItem>
+            <SelectItem value="">Todas las severidades</SelectItem>
             <SelectItem value="critico">Crítico</SelectItem>
             <SelectItem value="grave">Grave</SelectItem>
             <SelectItem value="moderado">Moderado</SelectItem>
@@ -451,7 +451,7 @@ export default function IncidentesPage() {
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="">Todos los estados</SelectItem>
             <SelectItem value="abierto">Abierto</SelectItem>
             <SelectItem value="en_investigacion">En Investigación</SelectItem>
             <SelectItem value="cerrado">Cerrado</SelectItem>
@@ -470,7 +470,7 @@ export default function IncidentesPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Incidentes</p>
+                <p className="text-sm font-medium text-gray-600">Total Incidentes</p>
                 <p className="text-2xl font-bold">{incidentes.length}</p>
               </div>
               <FileWarning className="h-8 w-8 text-red-500" />
@@ -481,7 +481,7 @@ export default function IncidentesPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Abiertos</p>
+                <p className="text-sm font-medium text-gray-600">Abiertos</p>
                 <p className="text-2xl font-bold text-red-600">
                   {incidentes.filter(i => i.estado_investigacion === 'abierto').length}
                 </p>
@@ -494,7 +494,7 @@ export default function IncidentesPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">En Investigación</p>
+                <p className="text-sm font-medium text-gray-600">En Investigación</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {incidentes.filter(i => i.estado_investigacion === 'en_investigacion').length}
                 </p>
@@ -507,7 +507,7 @@ export default function IncidentesPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Cerrados</p>
+                <p className="text-sm font-medium text-gray-600">Cerrados</p>
                 <p className="text-2xl font-bold text-green-600">
                   {incidentes.filter(i => i.estado_investigacion === 'cerrado').length}
                 </p>
@@ -523,14 +523,14 @@ export default function IncidentesPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-card rounded-lg border border-border/50"
+        className="bg-white rounded-lg border"
       >
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Incidentes Recientes</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Incidentes Recientes</h2>
           {loading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 border border-border/50 rounded-lg">
+                <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
                   <Skeleton className="h-4 w-4" />
                   <div className="space-y-2 flex-1">
                     <Skeleton className="h-4 w-1/4" />
@@ -555,7 +555,7 @@ export default function IncidentesPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredIncidentes.map((incidente) => (
-                    <TableRow key={incidente.id_reporte} className="hover:bg-muted/50">
+                    <TableRow key={incidente.id_reporte} className="hover:bg-gray-50">
                       <TableCell>
                         <Badge className="bg-blue-500 text-white">
                           {incidente.tipo_incidente}
@@ -564,7 +564,7 @@ export default function IncidentesPage() {
                       <TableCell>
                         <div>
                           <p className="font-medium line-clamp-2">{incidente.descripcion_detallada}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-gray-500">
                             {incidente.minas?.nombre}
                           </p>
                         </div>
@@ -580,7 +580,7 @@ export default function IncidentesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-gray-500">
                           {new Date(incidente.fecha_hora_incidente).toLocaleString()}
                         </div>
                       </TableCell>
@@ -648,69 +648,69 @@ export default function IncidentesPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Tipo</Label>
+                  <Label className="text-sm font-medium text-gray-600">Tipo</Label>
                   <Badge className="bg-blue-500 text-white">
                     {selectedIncidente.tipo_incidente}
                   </Badge>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Severidad</Label>
+                  <Label className="text-sm font-medium text-gray-600">Severidad</Label>
                   <Badge className={severidadColors[selectedIncidente.severidad as keyof typeof severidadColors]}>
                     {selectedIncidente.severidad}
                   </Badge>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Estado</Label>
+                  <Label className="text-sm font-medium text-gray-600">Estado</Label>
                   <Badge className={estadoColors[selectedIncidente.estado_investigacion as keyof typeof estadoColors]}>
                     {selectedIncidente.estado_investigacion}
                   </Badge>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Mina</Label>
+                  <Label className="text-sm font-medium text-gray-600">Mina</Label>
                   <p className="text-sm">{selectedIncidente.minas?.nombre}</p>
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Descripción Detallada</Label>
+                <Label className="text-sm font-medium text-gray-600">Descripción Detallada</Label>
                 <p className="text-sm">{selectedIncidente.descripcion_detallada}</p>
               </div>
               {selectedIncidente.acciones_inmediatas && (
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Acciones Inmediatas</Label>
+                  <Label className="text-sm font-medium text-gray-600">Acciones Inmediatas</Label>
                   <p className="text-sm">{selectedIncidente.acciones_inmediatas}</p>
                 </div>
               )}
               {selectedIncidente.testigos_presentes && (
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Testigos Presentes</Label>
+                  <Label className="text-sm font-medium text-gray-600">Testigos Presentes</Label>
                   <p className="text-sm">{Array.isArray(selectedIncidente.testigos_presentes) ? selectedIncidente.testigos_presentes.join(', ') : selectedIncidente.testigos_presentes}</p>
                 </div>
               )}
               {selectedIncidente.danos_materiales && (
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Daños Materiales</Label>
+                  <Label className="text-sm font-medium text-gray-600">Daños Materiales</Label>
                   <p className="text-sm">{selectedIncidente.danos_materiales}</p>
                 </div>
               )}
               {selectedIncidente.tiempo_parada_horas && (
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Tiempo de Parada</Label>
+                  <Label className="text-sm font-medium text-gray-600">Tiempo de Parada</Label>
                   <p className="text-sm">{selectedIncidente.tiempo_parada_horas} horas</p>
                 </div>
               )}
               {selectedIncidente.medidas_correctivas && (
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Medidas Correctivas</Label>
+                  <Label className="text-sm font-medium text-gray-600">Medidas Correctivas</Label>
                   <p className="text-sm">{selectedIncidente.medidas_correctivas}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Fecha Incidente</Label>
+                  <Label className="text-sm font-medium text-gray-600">Fecha Incidente</Label>
                   <p className="text-sm">{new Date(selectedIncidente.fecha_hora_incidente).toLocaleString()}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Reportante</Label>
+                  <Label className="text-sm font-medium text-gray-600">Reportante</Label>
                   <p className="text-sm">{selectedIncidente.usuarios_aplicacion?.nombre}</p>
                 </div>
               </div>
@@ -723,6 +723,407 @@ export default function IncidentesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+  });
+
+  const { toast } = useToast();
+  const { data: minas, isLoading: loadingMinas } = useMinas();
+  const { data: incidentes, isLoading: loadingIncidentes, refetch, isFetching } = useIncidentes(selectedMina);
+  const crearIncidenteMutation = useCrearIncidente();
+
+  // Auto-select first mina
+  if (!selectedMina && minas && minas.length > 0) {
+    setSelectedMina(minas[0].id_mina);
+  }
+
+  const filteredIncidentes = (incidentes || []).filter((incidente) => {
+    const matchesSearch =
+      incidente.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      incidente.tipo?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesClasificacion =
+      filterClasificacion === "all" || incidente.clasificacion === filterClasificacion;
+    return matchesSearch && matchesClasificacion;
+  });
+
+  const stats = {
+    total: incidentes?.length || 0,
+    graves: incidentes?.filter((i) => i.clasificacion === "grave" || i.clasificacion === "fatal").length || 0,
+    moderados: incidentes?.filter((i) => i.clasificacion === "moderado").length || 0,
+    leves: incidentes?.filter((i) => i.clasificacion === "leve").length || 0,
+  };
+
+  const handleCreateIncidente = async () => {
+    if (!formData.tipo || !formData.clasificacion || !selectedMina) {
+      toast({
+        title: "Error",
+        description: "Tipo, clasificación y mina son requeridos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await crearIncidenteMutation.mutateAsync({
+        id_mina: selectedMina,
+        tipo: formData.tipo,
+        clasificacion: formData.clasificacion,
+        descripcion: formData.descripcion || undefined,
+        causa_probable: formData.causa_probable || undefined,
+      });
+      toast({
+        title: "Incidente registrado",
+        description: "El incidente ha sido registrado exitosamente",
+      });
+      setIsCreateDialogOpen(false);
+      setFormData({ tipo: "", clasificacion: "" as ClasificacionIncidente, descripcion: "", causa_probable: "" });
+    } catch (err) {
+      toast({
+        title: "Error al crear incidente",
+        description: err instanceof Error ? err.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Actualizando",
+      description: "Cargando incidentes desde Supabase...",
+    });
+  };
+
+  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
+
+  // Loading
+  if (loadingMinas) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Incidentes</h1>
+          <p className="text-muted-foreground mt-1">
+            {minaActual?.nombre || "Selecciona una mina"} - Registro de incidentes de seguridad
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select
+            value={selectedMina?.toString() || ""}
+            onValueChange={(v) => setSelectedMina(parseInt(v))}
+          >
+            <SelectTrigger className="w-[200px] bg-card border-border/50">
+              <Mountain className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Seleccionar mina" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {(minas || []).map((mina) => (
+                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
+                  {mina.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isFetching || !selectedMina}
+            className="border-border/50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Actualizar
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground" disabled={!selectedMina}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Incidente
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Registrar Incidente</DialogTitle>
+                <DialogDescription>Los datos se guardarán en Supabase</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="tipo">Tipo de Incidente *</Label>
+                  <Input
+                    id="tipo"
+                    placeholder="Ej: Cuasi accidente, Falla equipo..."
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                    className="bg-background border-border/50"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="clasificacion">Clasificación *</Label>
+                  <Select
+                    value={formData.clasificacion}
+                    onValueChange={(v) => setFormData({ ...formData, clasificacion: v as ClasificacionIncidente })}
+                  >
+                    <SelectTrigger className="bg-background border-border/50">
+                      <SelectValue placeholder="Seleccionar clasificación" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {clasificaciones.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Textarea
+                    id="descripcion"
+                    placeholder="Descripción del incidente..."
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                    className="bg-background border-border/50"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="causa">Causa Probable</Label>
+                  <Input
+                    id="causa"
+                    placeholder="Causa probable del incidente"
+                    value={formData.causa_probable}
+                    onChange={(e) => setFormData({ ...formData, causa_probable: e.target.value })}
+                    className="bg-background border-border/50"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCreateIncidente}
+                  disabled={crearIncidenteMutation.isPending}
+                  className="bg-primary text-primary-foreground"
+                >
+                  {crearIncidenteMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Registrar Incidente"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </motion.div>
+
+      {/* Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <StatCard
+          title="Total Incidentes"
+          value={stats.total}
+          icon={FileWarning}
+          trend={{ value: 0, isPositive: true }}
+        />
+        <StatCard
+          title="Graves/Fatales"
+          value={stats.graves}
+          icon={AlertCircle}
+          trend={{ value: 0, isPositive: false }}
+        />
+        <StatCard
+          title="Moderados"
+          value={stats.moderados}
+          icon={FileWarning}
+          trend={{ value: 0, isPositive: false }}
+        />
+        <StatCard
+          title="Leves"
+          value={stats.leves}
+          icon={FileWarning}
+          trend={{ value: 0, isPositive: true }}
+        />
+      </motion.div>
+
+      {/* Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+        className="flex flex-col sm:flex-row gap-4"
+      >
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar incidentes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-card border-border/50"
+          />
+        </div>
+        <Select value={filterClasificacion} onValueChange={setFilterClasificacion}>
+          <SelectTrigger className="w-[180px] bg-card border-border/50">
+            <SelectValue placeholder="Clasificación" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="all">Todas</SelectItem>
+            {clasificaciones.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </motion.div>
+
+      {/* No mina selected */}
+      {!selectedMina && (
+        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
+          <Mountain className="h-16 w-16 text-muted-foreground/50" />
+          <h2 className="text-xl font-semibold">Selecciona una mina</h2>
+          <p className="text-muted-foreground">Elige una mina para ver sus incidentes</p>
+        </div>
+      )}
+
+      {/* Loading */}
+      {selectedMina && loadingIncidentes && (
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-8 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3">Cargando incidentes...</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {selectedMina && !loadingIncidentes && filteredIncidentes.length === 0 && (
+        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
+          <FileWarning className="h-16 w-16 text-muted-foreground/50" />
+          <h2 className="text-xl font-semibold">No hay incidentes</h2>
+          <p className="text-muted-foreground">
+            {searchQuery || filterClasificacion !== "all"
+              ? "No se encontraron incidentes con ese criterio"
+              : "No hay incidentes registrados para esta mina"}
+          </p>
+          {!searchQuery && filterClasificacion === "all" && (
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Registrar Primer Incidente
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
+      {selectedMina && !loadingIncidentes && filteredIncidentes.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <Card className="bg-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileWarning className="h-5 w-5 text-primary" />
+                Incidentes Registrados ({filteredIncidentes.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50">
+                    <TableHead>ID</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Clasificación</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredIncidentes.map((incidente) => (
+                    <TableRow key={incidente.id_incidente} className="border-border/50">
+                      <TableCell className="font-mono">#{incidente.id_incidente}</TableCell>
+                      <TableCell className="capitalize">{incidente.tipo || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getClasificacionColor(incidente.clasificacion)}>
+                          {incidente.clasificacion}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {incidente.descripcion || "Sin descripción"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {incidente.creado_en
+                          ? new Date(incidente.creado_en).toLocaleString("es-PE")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-card border-border">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/incidentes/${incidente.id_incidente}`}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver detalles
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Fetching indicator */}
+      {isFetching && !loadingIncidentes && (
+        <div className="fixed bottom-4 right-4 bg-card border border-border rounded-lg px-4 py-2 shadow-lg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span className="text-sm">Actualizando...</span>
+        </div>
+      )}
     </div>
   );
 }

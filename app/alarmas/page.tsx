@@ -13,6 +13,9 @@ import {
   Loader2,
   Mountain,
   Plus,
+  X,
+  AlertCircle,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,106 +48,100 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StatCard } from "@/components/cards/stat-card";
-import { useMinas, useAlarmas, useCrearAlarma } from "@/hooks/use-dashboard";
+import { useAlarmas, useCrearAlarma } from "@/hooks/use-alarmas";
 import { useToast } from "@/hooks/use-toast";
-import { SeveridadAlarma } from "@/lib/rpc/alarmas";
 
-const getSeverityColor = (severidad: string) => {
-  switch (severidad) {
-    case "critica":
-      return "bg-red-500/20 text-red-400 border-red-500/30";
-    case "alta":
-      return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-    case "media":
-      return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    case "baja":
-      return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-    default:
-      return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-  }
+const tipoEventoColors = {
+  emergencia: "bg-red-500 text-white",
+  alarma: "bg-orange-500 text-white",
+  advertencia: "bg-yellow-500 text-white",
+  informativo: "bg-blue-500 text-white",
 };
 
-const getTipoIcon = (tipo: string) => {
-  switch (tipo) {
-    case "velocidad":
-      return "🚗";
-    case "proximidad":
-      return "📡";
-    case "zona_restringida":
-      return "⛔";
-    case "fatiga":
-      return "😴";
-    default:
-      return "⚠️";
-  }
+const severidadColors = {
+  5: "bg-red-600 text-white",
+  4: "bg-red-500 text-white",
+  3: "bg-orange-500 text-white",
+  2: "bg-yellow-500 text-white",
+  1: "bg-blue-500 text-white",
+};
+
+const estadoColors = {
+  activo: "bg-red-100 text-red-800",
+  revisado: "bg-yellow-100 text-yellow-800",
+  resuelto: "bg-green-100 text-green-800",
+  falso_positivo: "bg-gray-100 text-gray-800",
 };
 
 export default function AlarmasPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMina, setSelectedMina] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("all");
   const [filterSeveridad, setFilterSeveridad] = useState<string>("all");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    severidad: "" as SeveridadAlarma,
-    mensaje: "",
-    valor_detectado: "",
+  const [filterEstado, setFilterEstado] = useState<string>("all");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedAlarma, setSelectedAlarma] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  
+  const { alarmas, loading, error, refetch } = useAlarmas({
+    tipo: filterTipo !== "all" ? filterTipo : undefined,
+    severidad: filterSeveridad !== "all" ? parseInt(filterSeveridad) : undefined,
+    estado: filterEstado !== "all" ? filterEstado : undefined,
   });
-
+  
+  const { crearAlarma, actualizarAlarma, eliminarAlarma, loading: loadingAction } = useCrearAlarma();
   const { toast } = useToast();
-  const { data: minas, isLoading: loadingMinas } = useMinas();
-  const { data: alarmas, isLoading: loadingAlarmas, refetch, isFetching } = useAlarmas(selectedMina);
-  const crearAlarmaMutation = useCrearAlarma();
 
-  // Auto-select first mina
-  if (!selectedMina && minas && minas.length > 0) {
-    setSelectedMina(minas[0].id_mina);
-  }
-
-  const filteredAlarmas = (alarmas || []).filter((alarma) => {
-    const matchesSearch = alarma.mensaje?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSeveridad = filterSeveridad === "all" || alarma.severidad === filterSeveridad;
-    return matchesSearch && matchesSeveridad;
+  const [formData, setFormData] = useState({
+    tipo_evento: "",
+    categoria: "",
+    descripcion: "",
+    severidad: 1,
+    id_dispositivo: "",
+    id_flota: "",
+    id_lugar: "",
+    id_trabajador: "",
+    latitud: "",
+    longitud: "",
+    altitud_metros: "",
+    datos_adicionales: "",
   });
 
-  const stats = {
-    total: alarmas?.length || 0,
-    criticas: alarmas?.filter((a) => a.severidad === "critica").length || 0,
-    altas: alarmas?.filter((a) => a.severidad === "alta").length || 0,
-    medias: alarmas?.filter((a) => a.severidad === "media").length || 0,
-  };
-
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Actualizando",
-      description: "Cargando alarmas desde Supabase...",
-    });
-  };
-
-  const handleCreateAlarma = async () => {
-    if (!selectedMina || !formData.severidad || !formData.mensaje) {
-      toast({
-        title: "Error",
-        description: "Completa todos los campos requeridos",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleCrearAlarma = async () => {
     try {
-      await crearAlarmaMutation.mutateAsync({
-        id_mina: selectedMina,
-        severidad: formData.severidad,
-        mensaje: formData.mensaje,
-        valor_detectado: formData.valor_detectado ? parseFloat(formData.valor_detectado) : undefined,
+      await crearAlarma({
+        ...formData,
+        severidad: parseInt(formData.severidad.toString()),
+        id_dispositivo: formData.id_dispositivo ? parseInt(formData.id_dispositivo) : undefined,
+        id_flota: formData.id_flota ? parseInt(formData.id_flota) : undefined,
+        id_lugar: formData.id_lugar ? parseInt(formData.id_lugar) : undefined,
+        id_trabajador: formData.id_trabajador ? parseInt(formData.id_trabajador) : undefined,
+        latitud: formData.latitud ? parseFloat(formData.latitud) : undefined,
+        longitud: formData.longitud ? parseFloat(formData.longitud) : undefined,
+        altitud_metros: formData.altitud_metros ? parseInt(formData.altitud_metros) : undefined,
+        datos_adicionales: formData.datos_adicionales ? JSON.parse(formData.datos_adicionales) : undefined,
       });
+
       toast({
         title: "Alarma creada",
-        description: "La alarma se ha registrado correctamente",
+        description: "La alarma ha sido creada exitosamente",
       });
-      setIsCreateDialogOpen(false);
-      setFormData({ severidad: "" as SeveridadAlarma, mensaje: "", valor_detectado: "" });
+      
+      setIsCreateModalOpen(false);
+      setFormData({
+        tipo_evento: "",
+        categoria: "",
+        descripcion: "",
+        severidad: 1,
+        id_dispositivo: "",
+        id_flota: "",
+        id_lugar: "",
+        id_trabajador: "",
+        latitud: "",
+        longitud: "",
+        altitud_metros: "",
+        datos_adicionales: "",
+      });
+      refetch();
     } catch (error) {
       toast({
         title: "Error",
@@ -154,126 +151,207 @@ export default function AlarmasPage() {
     }
   };
 
-  const minaActual = minas?.find((m) => m.id_mina === selectedMina);
+  const handleReconocer = async (id: number) => {
+    try {
+      await actualizarAlarma(id, "reconocer");
+      toast({
+        title: "Alarma reconocida",
+        description: "La alarma ha sido marcada como revisada",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo reconocer la alarma",
+        variant: "destructive",
+      });
+    }
+  };
 
-  // Loading
-  if (loadingMinas) {
+  const handleResolver = async (id: number, observaciones: string) => {
+    try {
+      await actualizarAlarma(id, "resolver", { observaciones_resolucion: observaciones });
+      toast({
+        title: "Alarma resuelta",
+        description: "La alarma ha sido marcada como resuelta",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo resolver la alarma",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEliminar = async (id: number) => {
+    try {
+      await eliminarAlarma(id);
+      toast({
+        title: "Alarma eliminada",
+        description: "La alarma ha sido eliminada exitosamente",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la alarma",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredAlarmas = alarmas.filter((alarma) =>
+    alarma.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (error) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-96" />
+      <div className="container mx-auto px-6 py-8">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">Error al cargar las alarmas</span>
+            </div>
+            <p className="text-red-600 mt-2">{error}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-6 py-8 space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Alarmas</h1>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Bell className="h-8 w-8 text-orange-500" />
+            Gestión de Alarmas
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {minaActual?.nombre || "Selecciona una mina"} - Sistema de alertas en tiempo real
+            Monitorea y gestiona todas las alarmas y eventos del sistema
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Select
-            value={selectedMina?.toString() || ""}
-            onValueChange={(v) => setSelectedMina(parseInt(v))}
-          >
-            <SelectTrigger className="w-[200px] bg-card border-border/50">
-              <Mountain className="h-4 w-4 mr-2 text-primary" />
-              <SelectValue placeholder="Seleccionar mina" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              {(minas || []).map((mina) => (
-                <SelectItem key={mina.id_mina} value={mina.id_mina.toString()}>
-                  {mina.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button
+            onClick={() => refetch()}
             variant="outline"
-            onClick={handleRefresh}
-            disabled={isFetching || !selectedMina}
-            className="border-border/50"
+            size="sm"
+            disabled={loading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90" disabled={!selectedMina}>
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Alarma
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Registrar Nueva Alarma</DialogTitle>
+                <DialogTitle>Crear Nueva Alarma</DialogTitle>
                 <DialogDescription>
-                  Crea una nueva alarma para la mina {minaActual?.nombre}
+                  Registra una nueva alarma en el sistema
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="severidad">Severidad *</Label>
-                  <Select
-                    value={formData.severidad}
-                    onValueChange={(v) => setFormData({ ...formData, severidad: v as SeveridadAlarma })}
-                  >
-                    <SelectTrigger className="bg-background border-border/50">
-                      <SelectValue placeholder="Seleccionar severidad" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="baja">Baja</SelectItem>
-                      <SelectItem value="media">Media</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="critica">Crítica</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tipo_evento">Tipo de Evento</Label>
+                    <Select value={formData.tipo_evento} onValueChange={(value) => setFormData({...formData, tipo_evento: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="emergencia">Emergencia</SelectItem>
+                        <SelectItem value="alarma">Alarma</SelectItem>
+                        <SelectItem value="advertencia">Advertencia</SelectItem>
+                        <SelectItem value="informativo">Informativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="severidad">Severidad</Label>
+                    <Select value={formData.severidad.toString()} onValueChange={(value) => setFormData({...formData, severidad: parseInt(value)})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar severidad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 - Muy Baja</SelectItem>
+                        <SelectItem value="2">2 - Baja</SelectItem>
+                        <SelectItem value="3">3 - Media</SelectItem>
+                        <SelectItem value="4">4 - Alta</SelectItem>
+                        <SelectItem value="5">5 - Crítica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mensaje">Mensaje *</Label>
-                  <Textarea
-                    id="mensaje"
-                    placeholder="Descripción de la alarma..."
-                    value={formData.mensaje}
-                    onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                    className="bg-background border-border/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="valor">Valor Detectado (opcional)</Label>
+                <div>
+                  <Label htmlFor="categoria">Categoría</Label>
                   <Input
-                    id="valor"
-                    type="number"
-                    placeholder="Ej: 85.5"
-                    value={formData.valor_detectado}
-                    onChange={(e) => setFormData({ ...formData, valor_detectado: e.target.value })}
-                    className="bg-background border-border/50"
+                    id="categoria"
+                    value={formData.categoria}
+                    onChange={(e) => setFormData({...formData, categoria: e.target.value})}
+                    placeholder="Ej: Seguridad, Operación, Mantenimiento"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Textarea
+                    id="descripcion"
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+                    placeholder="Describe la alarma en detalle"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="latitud">Latitud</Label>
+                    <Input
+                      id="latitud"
+                      value={formData.latitud}
+                      onChange={(e) => setFormData({...formData, latitud: e.target.value})}
+                      placeholder="-12.0464"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="longitud">Longitud</Label>
+                    <Input
+                      id="longitud"
+                      value={formData.longitud}
+                      onChange={(e) => setFormData({...formData, longitud: e.target.value})}
+                      placeholder="-77.0428"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="altitud">Altitud (m)</Label>
+                    <Input
+                      id="altitud"
+                      value={formData.altitud_metros}
+                      onChange={(e) => setFormData({...formData, altitud_metros: e.target.value})}
+                      placeholder="2700"
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateAlarma} disabled={crearAlarmaMutation.isPending}>
-                  {crearAlarmaMutation.isPending ? (
+                <Button onClick={handleCrearAlarma} disabled={loadingAction}>
+                  {loadingAction ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creando...
                     </>
                   ) : (
@@ -286,176 +364,327 @@ export default function AlarmasPage() {
         </div>
       </motion.div>
 
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        <StatCard
-          title="Total Alarmas"
-          value={stats.total}
-          icon={Bell}
-          trend={{ value: 0, isPositive: true }}
-        />
-        <StatCard
-          title="Críticas"
-          value={stats.criticas}
-          icon={AlertTriangle}
-          trend={{ value: 0, isPositive: false }}
-        />
-        <StatCard
-          title="Altas"
-          value={stats.altas}
-          icon={Clock}
-          trend={{ value: 0, isPositive: false }}
-        />
-        <StatCard
-          title="Medias"
-          value={stats.medias}
-          icon={CheckCircle}
-          trend={{ value: 0, isPositive: true }}
-        />
-      </motion.div>
-
       {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="flex flex-col sm:flex-row gap-4"
+        transition={{ delay: 0.1 }}
+        className="flex flex-wrap gap-4 items-center p-4 bg-card rounded-lg border border-border/50"
       >
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar alarmas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-card border-border/50"
-          />
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar alarmas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="emergencia">Emergencia</SelectItem>
+            <SelectItem value="alarma">Alarma</SelectItem>
+            <SelectItem value="advertencia">Advertencia</SelectItem>
+            <SelectItem value="informativo">Informativo</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={filterSeveridad} onValueChange={setFilterSeveridad}>
-          <SelectTrigger className="w-[180px] bg-card border-border/50">
+          <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Severidad" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="critica">Críticas</SelectItem>
-            <SelectItem value="alta">Altas</SelectItem>
-            <SelectItem value="media">Medias</SelectItem>
-            <SelectItem value="baja">Bajas</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">Todas las severidades</SelectItem>
+            <SelectItem value="5">5 - Crítica</SelectItem>
+            <SelectItem value="4">4 - Alta</SelectItem>
+            <SelectItem value="3">3 - Media</SelectItem>
+            <SelectItem value="2">2 - Baja</SelectItem>
+            <SelectItem value="1">1 - Muy Baja</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterEstado} onValueChange={setFilterEstado}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="activo">Activo</SelectItem>
+            <SelectItem value="revisado">Revisado</SelectItem>
+            <SelectItem value="resuelto">Resuelto</SelectItem>
+            <SelectItem value="falso_positivo">Falso Positivo</SelectItem>
           </SelectContent>
         </Select>
       </motion.div>
 
-      {/* No mina selected */}
-      {!selectedMina && (
-        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
-          <Mountain className="h-16 w-16 text-muted-foreground/50" />
-          <h2 className="text-xl font-semibold">Selecciona una mina</h2>
-          <p className="text-muted-foreground">Elige una mina para ver sus alarmas</p>
-        </div>
-      )}
-
-      {/* Loading alarmas */}
-      {selectedMina && loadingAlarmas && (
-        <Card className="bg-card border-border/50">
-          <CardContent className="p-8 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3">Cargando alarmas...</span>
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-4 gap-6"
+      >
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Alarmas</p>
+                <p className="text-2xl font-bold">{alarmas.length}</p>
+              </div>
+              <Bell className="h-8 w-8 text-orange-500" />
+            </div>
           </CardContent>
         </Card>
-      )}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Activas</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {alarmas.filter(a => a.estado === 'activo').length}
+                </p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Resueltas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {alarmas.filter(a => a.estado === 'resuelto').length}
+                </p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Críticas</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {alarmas.filter(a => a.severidad >= 4).length}
+                </p>
+              </div>
+              <Shield className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      {/* Empty state */}
-      {selectedMina && !loadingAlarmas && filteredAlarmas.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
-          <Bell className="h-16 w-16 text-muted-foreground/50" />
-          <h2 className="text-xl font-semibold">No hay alarmas</h2>
-          <p className="text-muted-foreground">
-            {searchQuery || filterSeveridad !== "all"
-              ? "No se encontraron alarmas con ese criterio"
-              : "No hay alarmas registradas para esta mina"}
-          </p>
-        </div>
-      )}
-
-      {/* Table */}
-      {selectedMina && !loadingAlarmas && filteredAlarmas.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
-          <Card className="bg-card border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                Alarmas Recientes ({filteredAlarmas.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+      {/* Alarmas Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-card rounded-lg border border-border/50"
+      >
+        <div className="p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Alarmas Recientes</h2>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 p-4 border border-border/50 rounded-lg">
+                  <Skeleton className="h-4 w-4" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border/50">
+                  <TableRow>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Descripción</TableHead>
                     <TableHead>Severidad</TableHead>
-                    <TableHead>Mensaje</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Fecha</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAlarmas.map((alarma) => (
-                    <TableRow key={alarma.id_alarma} className="border-border/50">
+                    <TableRow key={alarma.id_evento} className="hover:bg-muted/50">
                       <TableCell>
-                        <span className="text-lg mr-2">⚠️</span>
-                        <span className="capitalize">Alarma #{alarma.id_alarma}</span>
+                        <Badge className={tipoEventoColors[alarma.tipo_evento as keyof typeof tipoEventoColors]}>
+                          {alarma.tipo_evento}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getSeverityColor(alarma.severidad)}>
+                        <div>
+                          <p className="font-medium">{alarma.descripcion}</p>
+                          <p className="text-sm text-muted-foreground">{alarma.categoria}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={severidadColors[alarma.severidad as keyof typeof severidadColors]}>
                           {alarma.severidad}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {alarma.mensaje || "Sin mensaje"}
+                      <TableCell>
+                        <Badge className={estadoColors[alarma.estado as keyof typeof estadoColors]}>
+                          {alarma.estado}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {alarma.valor_detectado !== null ? (
-                          <span className="font-mono">{alarma.valor_detectado}</span>
-                        ) : (
-                          "-"
-                        )}
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(alarma.creado_en).toLocaleString()}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {alarma.ts_inicio
-                          ? new Date(alarma.ts_inicio).toLocaleString("es-PE")
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedAlarma(alarma);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {alarma.estado === 'activo' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReconocer(alarma.id_evento)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {(alarma.estado === 'activo' || alarma.estado === 'revisado') && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleResolver(alarma.id_evento, "Resuelto por operador")}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleEliminar(alarma.id_evento)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* Fetching indicator */}
-      {isFetching && !loadingAlarmas && (
-        <div className="fixed bottom-4 right-4 bg-card border border-border rounded-lg px-4 py-2 shadow-lg flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          <span className="text-sm">Actualizando...</span>
+            </div>
+          )}
         </div>
-      )}
+      </motion.div>
+
+      {/* Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Detalles de la Alarma</DialogTitle>
+            <DialogDescription>
+              Información completa de la alarma seleccionada
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAlarma && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Tipo</Label>
+                  <Badge className={tipoEventoColors[selectedAlarma.tipo_evento as keyof typeof tipoEventoColors]}>
+                    {selectedAlarma.tipo_evento}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Severidad</Label>
+                  <Badge className={severidadColors[selectedAlarma.severidad as keyof typeof severidadColors]}>
+                    {selectedAlarma.severidad}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Estado</Label>
+                  <Badge className={estadoColors[selectedAlarma.estado as keyof typeof estadoColors]}>
+                    {selectedAlarma.estado}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Categoría</Label>
+                  <p className="text-sm">{selectedAlarma.categoria}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Descripción</Label>
+                <p className="text-sm">{selectedAlarma.descripcion}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {selectedAlarma.latitud && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Latitud</Label>
+                    <p className="text-sm">{selectedAlarma.latitud}</p>
+                  </div>
+                )}
+                {selectedAlarma.longitud && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Longitud</Label>
+                    <p className="text-sm">{selectedAlarma.longitud}</p>
+                  </div>
+                )}
+                {selectedAlarma.altitud_metros && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Altitud</Label>
+                    <p className="text-sm">{selectedAlarma.altitud_metros} m</p>
+                  </div>
+                )}
+              </div>
+              {selectedAlarma.datos_adicionales && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Datos Adicionales</Label>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(selectedAlarma.datos_adicionales, null, 2)}
+                  </pre>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Fecha Creación</Label>
+                  <p className="text-sm">{new Date(selectedAlarma.creado_en).toLocaleString()}</p>
+                </div>
+                {selectedAlarma.fecha_resolucion && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Fecha Resolución</Label>
+                    <p className="text-sm">{new Date(selectedAlarma.fecha_resolucion).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+              {selectedAlarma.observaciones_resolucion && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Observaciones de Resolución</Label>
+                  <p className="text-sm">{selectedAlarma.observaciones_resolucion}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,40 +1,57 @@
 import { supabase } from "@/lib/supabase/client";
 
+export type EstadoTrabajador = "activo" | "vacaciones" | "suspendido" | "retirado";
+
 export interface Trabajador {
   id_trabajador: number;
   nombre_completo: string;
-  doc_identidad?: string;
-  cargo?: string;
-  empresa_contratista?: string;
-  creado_por?: number;
+  doc_identidad: string;
+  cargo: string;
+  empresa_contratista: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  fecha_ingreso?: string;
+  certificaciones?: string[];
+  estado: EstadoTrabajador;
   creado_en?: string;
+  creado_por?: number;
 }
 
-// RPC: rpc_listar_trabajadores - Sin parametros, retorna SETOF trabajadores
+// ========== FUNCIONES RPC ==========
+
 export async function listarTrabajadores(): Promise<Trabajador[]> {
   const { data, error } = await supabase.rpc("rpc_listar_trabajadores");
   if (error) throw error;
   return (data || []) as Trabajador[];
 }
 
-// RPC: rpc_crear_trabajador(p_nombre, p_doc, p_cargo, p_empresa)
 export async function crearTrabajador(trabajador: {
-  nombre: string;
-  doc: string;
-  cargo?: string;
-  empresa?: string;
+  nombre_completo: string;
+  doc_identidad: string;
+  cargo: string;
+  empresa_contratista: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  fecha_ingreso?: string;
+  certificaciones?: string[];
 }): Promise<Trabajador> {
   const { data, error } = await supabase.rpc("rpc_crear_trabajador", {
-    p_nombre: trabajador.nombre,
-    p_doc: trabajador.doc,
-    p_cargo: trabajador.cargo || null,
-    p_empresa: trabajador.empresa || null,
+    p_nombre_completo: trabajador.nombre_completo,
+    p_doc_identidad: trabajador.doc_identidad,
+    p_cargo: trabajador.cargo,
+    p_empresa_contratista: trabajador.empresa_contratista,
+    p_email: trabajador.email || null,
+    p_telefono: trabajador.telefono || null,
+    p_fecha_nacimiento: trabajador.fecha_nacimiento || null,
+    p_fecha_ingreso: trabajador.fecha_ingreso || null,
+    p_certificaciones: trabajador.certificaciones || null,
   });
   if (error) throw error;
   return data as Trabajador;
 }
 
-// Consulta directa para obtener un trabajador por ID
 export async function obtenerTrabajador(id: number): Promise<Trabajador | null> {
   const { data, error } = await supabase
     .from("trabajadores")
@@ -45,11 +62,33 @@ export async function obtenerTrabajador(id: number): Promise<Trabajador | null> 
   return data as Trabajador | null;
 }
 
-// ========== UPDATE & DELETE ==========
+export async function buscarTrabajadoresPorEmpresa(empresa: string): Promise<Trabajador[]> {
+  const { data, error } = await supabase
+    .from("trabajadores")
+    .select("*")
+    .eq("empresa_contratista", empresa)
+    .eq("estado", "activo")
+    .order("nombre_completo");
+  if (error) throw error;
+  return (data || []) as Trabajador[];
+}
+
+export async function buscarTrabajadoresPorCargo(cargo: string): Promise<Trabajador[]> {
+  const { data, error } = await supabase
+    .from("trabajadores")
+    .select("*")
+    .ilike("cargo", `%${cargo}%`)
+    .eq("estado", "activo")
+    .order("nombre_completo");
+  if (error) throw error;
+  return (data || []) as Trabajador[];
+}
+
+// ========== FUNCIONES DE ACTUALIZACIÓN Y ELIMINACIÓN ==========
 
 export async function actualizarTrabajador(
   id: number,
-  trabajador: Partial<{ nombre_completo: string; doc_identidad: string; cargo: string; empresa_contratista: string }>
+  trabajador: Partial<Omit<Trabajador, "id_trabajador" | "creado_en" | "creado_por">>
 ): Promise<Trabajador> {
   const { data, error } = await supabase
     .from("trabajadores")
@@ -64,4 +103,15 @@ export async function actualizarTrabajador(
 export async function eliminarTrabajador(id: number): Promise<void> {
   const { error } = await supabase.from("trabajadores").delete().eq("id_trabajador", id);
   if (error) throw error;
+}
+
+export async function cambiarEstadoTrabajador(id: number, estado: EstadoTrabajador): Promise<Trabajador> {
+  const { data, error } = await supabase
+    .from("trabajadores")
+    .update({ estado })
+    .eq("id_trabajador", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Trabajador;
 }

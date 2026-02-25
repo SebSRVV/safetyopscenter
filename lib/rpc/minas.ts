@@ -1,15 +1,26 @@
 import { supabase } from "@/lib/supabase/client";
 
-// ========== CRUD OPERATIONS ==========
+// ========== INTERFACES COMPLETAS ==========
 
 export interface Mina {
   id_mina: number;
   nombre: string;
   codigo: string;
   ubicacion: string;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  latitud?: number;
+  longitud?: number;
+  altitud_metros?: number;
   empresa: string;
-  creado_por?: number;
+  tipo_mina: "subterranea" | "superficial" | "mixta";
+  mineral_principal?: string;
+  produccion_anual_toneladas?: number;
+  numero_trabajadores?: number;
+  activa: boolean;
   creado_en?: string;
+  creado_por?: number;
 }
 
 export interface Lugar {
@@ -20,9 +31,25 @@ export interface Lugar {
   descripcion?: string;
   latitud?: number;
   longitud?: number;
-  creado_por?: number;
+  altitud_metros?: number;
+  nivel_profundidad_metros?: number;
+  capacidad_vehiculos?: number;
+  estado: "operativo" | "mantenimiento" | "cerrado" | "emergencia";
   creado_en?: string;
+  creado_por?: number;
 }
+
+export interface EstadisticasMina {
+  nombre_mina: string;
+  flota_operativa: number;
+  flota_mantenimiento: number;
+  dispositivos_online: number;
+  eventos_dia: number;
+  trabajadores_activos: number;
+  ultima_actualizacion: string;
+}
+
+// ========== FUNCIONES RPC ==========
 
 export async function listarMinas(): Promise<Mina[]> {
   const { data, error } = await supabase.rpc("rpc_listar_minas");
@@ -41,12 +68,32 @@ export async function crearMina(mina: {
   codigo: string;
   ubicacion: string;
   empresa: string;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  latitud?: number;
+  longitud?: number;
+  altitud_metros?: number;
+  tipo_mina?: "subterranea" | "superficial" | "mixta";
+  mineral_principal?: string;
+  produccion_anual_toneladas?: number;
+  numero_trabajadores?: number;
 }): Promise<Mina> {
   const { data, error } = await supabase.rpc("rpc_crear_mina", {
     p_nombre: mina.nombre,
     p_codigo: mina.codigo,
     p_ubicacion: mina.ubicacion,
     p_empresa: mina.empresa,
+    p_departamento: mina.departamento || null,
+    p_provincia: mina.provincia || null,
+    p_distrito: mina.distrito || null,
+    p_latitud: mina.latitud || null,
+    p_longitud: mina.longitud || null,
+    p_altitud_metros: mina.altitud_metros || null,
+    p_tipo_mina: mina.tipo_mina || "subterranea",
+    p_mineral_principal: mina.mineral_principal || null,
+    p_produccion_anual_toneladas: mina.produccion_anual_toneladas || null,
+    p_numero_trabajadores: mina.numero_trabajadores || null,
   });
   if (error) throw error;
   return data as Mina;
@@ -67,6 +114,9 @@ export async function crearLugar(lugar: {
   descripcion?: string;
   latitud?: number;
   longitud?: number;
+  altitud_metros?: number;
+  nivel_profundidad_metros?: number;
+  capacidad_vehiculos?: number;
 }): Promise<Lugar> {
   const { data, error } = await supabase.rpc("rpc_crear_lugar", {
     p_id_mina: lugar.id_mina,
@@ -75,16 +125,27 @@ export async function crearLugar(lugar: {
     p_descripcion: lugar.descripcion || null,
     p_latitud: lugar.latitud || null,
     p_longitud: lugar.longitud || null,
+    p_altitud_metros: lugar.altitud_metros || null,
+    p_nivel_profundidad_metros: lugar.nivel_profundidad_metros || null,
+    p_capacidad_vehiculos: lugar.capacidad_vehiculos || null,
   });
   if (error) throw error;
   return data as Lugar;
 }
 
-// ========== UPDATE & DELETE (Direct table access) ==========
+export async function obtenerEstadisticasMina(idMina: number): Promise<EstadisticasMina | null> {
+  const { data, error } = await supabase.rpc("rpc_estadisticas_mina", {
+    p_id_mina: idMina,
+  });
+  if (error) throw error;
+  return data as EstadisticasMina | null;
+}
+
+// ========== FUNCIONES DE ACTUALIZACIÓN Y ELIMINACIÓN ==========
 
 export async function actualizarMina(
   id: number,
-  mina: Partial<{ nombre: string; codigo: string; ubicacion: string; empresa: string }>
+  mina: Partial<Omit<Mina, "id_mina" | "creado_en" | "creado_por">>
 ): Promise<Mina> {
   const { data, error } = await supabase
     .from("minas")
@@ -103,7 +164,7 @@ export async function eliminarMina(id: number): Promise<void> {
 
 export async function actualizarLugar(
   id: number,
-  lugar: Partial<{ nombre: string; tipo: Lugar["tipo"]; descripcion: string; latitud: number; longitud: number }>
+  lugar: Partial<Omit<Lugar, "id_lugar" | "creado_en" | "creado_por">>
 ): Promise<Lugar> {
   const { data, error } = await supabase
     .from("lugar_de_los_dispositivos")

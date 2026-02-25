@@ -114,8 +114,10 @@ export default function TrabajadoresPage() {
 
     try {
       await crearTrabajadorMutation.mutateAsync({
-        ...formData,
-        empresa: formData.empresa || minaActual?.empresa || "",
+        nombre_completo: formData.nombre,
+        doc_identidad: formData.doc,
+        cargo: formData.cargo || "",
+        empresa_contratista: formData.empresa || minaActual?.empresa || "",
       });
       toast({
         title: "Trabajador creado",
