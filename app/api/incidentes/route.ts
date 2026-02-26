@@ -55,32 +55,23 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServer();
     const body = await request.json();
 
-    // Crear nuevo incidente
-    const { data, error } = await supabase.from("reportes_incidentes").insert({
-      id_mina: body.id_mina,
-      id_lugar: body.id_lugar || null,
-      id_flota: body.id_flota || null,
-      id_trabajador_afectado: body.id_trabajador_afectado || null,
-      id_reportante: body.id_reportante,
-      tipo_incidente: body.tipo_incidente,
-      severidad: body.severidad,
-      descripcion_detallada: body.descripcion_detallada,
-      fecha_hora_incidente: body.fecha_hora_incidente || new Date().toISOString(),
-      acciones_inmediatas: body.acciones_inmediatas || null,
-      testigos_presentes: body.testigos_presentes || null,
-      danos_materiales: body.danos_materiales || null,
-      tiempo_parada_horas: body.tiempo_parada_horas || null,
-      estado_investigacion: body.estado_investigacion || "abierto",
-      medidas_correctivas: body.medidas_correctivas || null,
-    }).select(`
-      *,
-      minas!inner(nombre, codigo),
-      lugar_de_los_dispositivos!inner(nombre),
-      flota_minera!inner(nombre, placa_o_credencial),
-      trabajadores!inner(nombre_completo),
-      usuarios_aplicacion!inner(nombre, email)
-    `)
-    .single();
+    // Usar el servicio para insertar sin RLS
+    const { data, error } = await supabase.rpc('insertar_incidente_sin_rls', {
+      p_id_mina: body.id_mina,
+      p_id_lugar: body.id_lugar || null,
+      p_id_flota: body.id_flota || null,
+      p_id_trabajador_afectado: body.id_trabajador_afectado || null,
+      p_id_reportante: body.id_reportante,
+      p_tipo_incidente: body.tipo_incidente,
+      p_severidad: body.severidad,
+      p_descripcion_detallada: body.descripcion_detallada,
+      p_fecha_hora_incidente: body.fecha_hora_incidente || new Date().toISOString(),
+      p_acciones_inmediatas: body.acciones_inmediatas || null,
+      p_testigos_presentes: body.testigos_presentes || null,
+      p_danos_materiales: body.danos_materiales || null,
+      p_tiempo_parada_horas: body.tiempo_parada_horas || null,
+      p_medidas_correctivas: body.medidas_correctivas || null,
+    });
 
     if (error) {
       console.error("Error creando incidente:", error);

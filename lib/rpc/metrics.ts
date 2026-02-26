@@ -56,10 +56,10 @@ export async function contarTrabajadores(): Promise<number> {
 
 export async function contarAlarmasActivasPorMina(idMina: number): Promise<number> {
   const { count, error } = await supabase
-    .from("alarmas_disparadas")
+    .from("eventos_alarmas")
     .select("*", { count: "exact", head: true })
     .eq("id_mina", idMina)
-    .is("ts_fin", null);
+    .is("fecha_resolucion", null);
   if (error) throw error;
   return count || 0;
 }
@@ -81,7 +81,7 @@ export async function obtenerIncidentesUltimos7Dias(idMina: number): Promise<Inc
   hace7Dias.setDate(hace7Dias.getDate() - 7);
   
   const { data, error } = await supabase
-    .from("incidentes_seguridad")
+    .from("reportes_incidentes")
     .select("creado_en")
     .eq("id_mina", idMina)
     .gte("creado_en", hace7Dias.toISOString());
@@ -123,17 +123,18 @@ export async function obtenerIncidentesUltimos7Dias(idMina: number): Promise<Inc
 
 export async function obtenerAlarmasPorSeveridad(idMina: number): Promise<AlarmasPorSeveridad[]> {
   const { data, error } = await supabase
-    .from("alarmas_disparadas")
+    .from("eventos_alarmas")
     .select("severidad")
     .eq("id_mina", idMina);
   
   if (error) throw error;
   
-  const conteo: Record<string, number> = {
-    critica: 0,
-    alta: 0,
-    media: 0,
-    baja: 0,
+  const conteo: Record<number, number> = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
   };
   
   (data || []).forEach((alarma) => {
@@ -143,10 +144,11 @@ export async function obtenerAlarmasPorSeveridad(idMina: number): Promise<Alarma
   });
   
   return [
-    { severidad: "Critica", cantidad: conteo.critica },
-    { severidad: "Alta", cantidad: conteo.alta },
-    { severidad: "Media", cantidad: conteo.media },
-    { severidad: "Baja", cantidad: conteo.baja },
+    { severidad: "1 - Muy Baja", cantidad: conteo[1] },
+    { severidad: "2 - Baja", cantidad: conteo[2] },
+    { severidad: "3 - Media", cantidad: conteo[3] },
+    { severidad: "4 - Alta", cantidad: conteo[4] },
+    { severidad: "5 - Crítica", cantidad: conteo[5] },
   ];
 }
 
@@ -172,8 +174,8 @@ export async function obtenerTrabajadoresPorEmpresa(): Promise<{ empresa: string
 
 export async function obtenerIncidentesPorClasificacion(idMina: number): Promise<{ clasificacion: string; cantidad: number }[]> {
   const { data, error } = await supabase
-    .from("incidentes_seguridad")
-    .select("clasificacion")
+    .from("reportes_incidentes")
+    .select("severidad")
     .eq("id_mina", idMina);
   
   if (error) throw error;
@@ -182,12 +184,12 @@ export async function obtenerIncidentesPorClasificacion(idMina: number): Promise
     leve: 0,
     moderado: 0,
     grave: 0,
-    fatal: 0,
+    critico: 0,
   };
   
   (data || []).forEach((inc) => {
-    if (conteo[inc.clasificacion] !== undefined) {
-      conteo[inc.clasificacion]++;
+    if (conteo[inc.severidad] !== undefined) {
+      conteo[inc.severidad]++;
     }
   });
   
@@ -195,6 +197,6 @@ export async function obtenerIncidentesPorClasificacion(idMina: number): Promise
     { clasificacion: "Leve", cantidad: conteo.leve },
     { clasificacion: "Moderado", cantidad: conteo.moderado },
     { clasificacion: "Grave", cantidad: conteo.grave },
-    { clasificacion: "Fatal", cantidad: conteo.fatal },
+    { clasificacion: "Crítico", cantidad: conteo.critico },
   ];
 }

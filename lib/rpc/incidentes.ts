@@ -52,9 +52,9 @@ export async function crearIncidente(incidente: {
   return data as Incidente;
 }
 
-// Consulta directa a tabla incidentes_seguridad (si no hay RPC de listar)
+// Consulta directa a tabla reportes_incidentes (si no hay RPC de listar)
 export async function listarIncidentes(idMina?: number): Promise<Incidente[]> {
-  let query = supabase.from("incidentes_seguridad").select("*");
+  let query = supabase.from("reportes_incidentes").select("*");
   
   if (idMina) {
     query = query.eq("id_mina", idMina);
@@ -67,9 +67,9 @@ export async function listarIncidentes(idMina?: number): Promise<Incidente[]> {
 
 export async function obtenerIncidente(id: number): Promise<Incidente | null> {
   const { data, error } = await supabase
-    .from("incidentes_seguridad")
+    .from("reportes_incidentes")
     .select("*")
-    .eq("id_incidente", id)
+    .eq("id_reporte", id)
     .single();
   if (error) throw error;
   return data as Incidente | null;
