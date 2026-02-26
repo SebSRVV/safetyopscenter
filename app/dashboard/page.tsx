@@ -31,19 +31,29 @@ import {
   useTrabajadores,
   useIncidentes,
 } from "@/hooks/use-dashboard";
+import {
+  useMockDashboardResumen,
+  useMockIncidentesHistorico,
+  useMockAlarmasPorSeveridad,
+  useMockAlarmasActivas,
+  useMockUltimasAlarmas,
+  useMockEstadisticasPorMina,
+} from "@/hooks/use-mock-dashboard";
 
 // Coordenadas de Mina Poderosa, La Libertad, Peru
 const MINA_COORDS = { lat: -8.0833, lng: -77.5833 };
 
-const getSeverityColor = (severidad: string) => {
-  switch (severidad) {
-    case "critica":
+const getSeverityColor = (severidad: string | number) => {
+  const sev = typeof severidad === 'number' ? severidad : parseInt(severidad) || 0;
+  switch (sev) {
+    case 5:
       return "bg-red-500/20 text-red-400 border-red-500/30";
-    case "alta":
+    case 4:
       return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-    case "media":
+    case 3:
       return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    case "baja":
+    case 2:
+    case 1:
       return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     default:
       return "bg-gray-500/20 text-gray-400 border-gray-500/30";
@@ -69,11 +79,26 @@ export default function DashboardPage() {
   const { data: trabajadores } = useTrabajadores();
   const { data: incidentes } = useIncidentes(activeMinaId);
 
+  // Datos mockup con actualización automática
+  const { resumen: mockResumen } = useMockDashboardResumen(activeMinaId);
+  const { incidentes: mockIncidentesHistorico } = useMockIncidentesHistorico(activeMinaId);
+  const { alarmas: mockAlarmasSeveridad } = useMockAlarmasPorSeveridad(activeMinaId);
+  const { alarmas: mockAlarmasActivas } = useMockAlarmasActivas(activeMinaId);
+  const { alarmas: mockUltimasAlarmas } = useMockUltimasAlarmas(activeMinaId);
+  const { estadisticas: mockEstadisticas } = useMockEstadisticasPorMina(activeMinaId);
+
+  // Usar datos mockup优先
+  const resumenData = mockResumen || resumen;
+  const incidentesHistoricoData = mockIncidentesHistorico || incidentesHistorico;
+  const alarmasSeveridadData = mockAlarmasSeveridad || alarmasSeveridad;
+  const alarmasActivasData = mockAlarmasActivas || alarmas;
+  const ultimasAlarmasData = mockUltimasAlarmas || alarmas;
+
   const minaActual = minas?.find(m => m.id_mina === activeMinaId);
   const isLoading = loadingMinas || loadingResumen;
   
-  // Datos para gráficos con datos reales
-  const chartIncidentes = incidentesHistorico || [
+  // Datos para gráficos con datos mockup
+  const chartIncidentes = incidentesHistoricoData || [
     { fecha: "Lun", incidentes: 0 },
     { fecha: "Mar", incidentes: 0 },
     { fecha: "Mie", incidentes: 0 },
@@ -83,7 +108,7 @@ export default function DashboardPage() {
     { fecha: "Dom", incidentes: 0 },
   ];
   
-  const chartAlarmas = alarmasSeveridad || [
+  const chartAlarmas = alarmasSeveridadData || [
     { severidad: "Critica", cantidad: 0 },
     { severidad: "Alta", cantidad: 0 },
     { severidad: "Media", cantidad: 0 },
@@ -107,7 +132,7 @@ export default function DashboardPage() {
     details: `${f.familia} - ${f.marca || "N/A"}`,
   })) || [];
 
-  const alarmasRecientes = alarmas?.slice(0, 5) || [];
+  const alarmasRecientes = ultimasAlarmasData?.slice(0, 5) || [];
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -148,7 +173,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Incidentes Hoy"
-          value={incidentesHoy || resumen?.incidentes_hoy || 0}
+          value={incidentesHoy || resumenData?.incidentes_hoy || 0}
           description={`${totalIncidentes} total registrados`}
           icon={FileWarning}
           variant="warning"
@@ -156,15 +181,15 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Alarmas Activas"
-          value={alarmas?.length || resumen?.alarmas_criticas || 0}
-          description={`${chartAlarmas.find(a => a.severidad === "Critica")?.cantidad || 0} críticas`}
+          value={alarmasActivasData?.length || resumenData?.alarmas_criticas || 0}
+          description={`${chartAlarmas.find(a => a.severidad === "5 - Crítica")?.cantidad || 0} críticas`}
           icon={AlertTriangle}
           variant="critical"
           delay={0.1}
         />
         <StatCard
           title="Flota Activa"
-          value={flota?.length || resumen?.flota_activa || 0}
+          value={flota?.length || resumenData?.flota_activa || 0}
           description="Unidades operativas"
           icon={Truck}
           variant="success"
@@ -172,7 +197,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Trabajadores"
-          value={totalTrabajadores || resumen?.trabajadores_turno || 0}
+          value={totalTrabajadores || resumenData?.trabajadores_turno || 0}
           description="Registrados en sistema"
           icon={Users}
           variant="info"
@@ -271,7 +296,7 @@ export default function DashboardPage() {
                 ) : alarmasRecientes.length > 0 ? (
                   alarmasRecientes.map((alarma, index) => (
                     <motion.div
-                      key={alarma.id_alarma}
+                      key={alarma.id_evento}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.9 + index * 0.1 }}
@@ -283,13 +308,13 @@ export default function DashboardPage() {
                         </Badge>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{alarma.mensaje || "Alarma detectada"}</p>
+                        <p className="text-sm font-medium">{alarma.descripcion || "Alarma detectada"}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Valor: {alarma.valor_detectado ?? "N/A"}
+                          Sensor: {alarma.tipo_evento || "N/A"}
                         </p>
                       </div>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(alarma.ts_inicio).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(alarma.creado_en).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </motion.div>
                   ))
@@ -313,19 +338,19 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-muted/30 border border-border/30 text-center">
-                    <p className="text-3xl font-bold text-primary">{resumen?.flota_activa ?? 0}</p>
+                    <p className="text-3xl font-bold text-primary">{resumenData?.flota_activa ?? 0}</p>
                     <p className="text-xs text-muted-foreground mt-1">Vehiculos Activos</p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/30 border border-border/30 text-center">
-                    <p className="text-3xl font-bold text-emerald-400">{resumen?.trabajadores_turno ?? 0}</p>
+                    <p className="text-3xl font-bold text-emerald-400">{resumenData?.trabajadores_turno ?? 0}</p>
                     <p className="text-xs text-muted-foreground mt-1">Personal en Turno</p>
                   </div>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/30 border border-border/30">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-muted-foreground">Estado General</span>
-                    <Badge className={resumen?.alarmas_criticas === 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-yellow-500/20 text-yellow-400"}>
-                      {resumen?.alarmas_criticas === 0 ? "Normal" : "Atencion"}
+                    <Badge className={resumenData?.alarmas_criticas === 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-yellow-500/20 text-yellow-400"}>
+                      {resumenData?.alarmas_criticas === 0 ? "Normal" : "Atencion"}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
