@@ -4,47 +4,62 @@ import { createServerClient } from "@supabase/ssr";
 const publicRoutes = ["/auth/login", "/auth/register", "/"];
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  try {
+    let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
+      }
+    );
+
+    // Timeout promise para evitar que se quede colgado
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+    );
+
+    const { data: { user } } = await Promise.race([
+      supabase.auth.getUser(),
+      timeoutPromise
+    ]) as any;
+
+    const pathname = request.nextUrl.pathname;
+
+    const isPublicRoute = publicRoutes.some(
+      (route) => pathname === route || pathname.startsWith("/auth/")
+    );
+
+    if (!user && !isPublicRoute) {
+      const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(loginUrl);
     }
-  );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
+    if (user && pathname.startsWith("/auth/")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
 
-  const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith("/auth/")
-  );
-
-  if (!user && !isPublicRoute) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(loginUrl);
+    return supabaseResponse;
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // En caso de error, continuar sin autenticación para evitar timeouts
+    return NextResponse.next({ request });
   }
-
-  if (user && pathname.startsWith("/auth/")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return supabaseResponse;
 }
 
 export const config = {
